@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
-/* Ensinando as cores da DWL para o Tailwind usar nas classes */
 @theme {
-	--color-dwl-teal: #1296b0; /* Cor do texto da logo */
-	--color-dwl-blue: #1e5378; /* Cor principal do desenho */
-	--color-dwl-red: #8d0e0a; /* Gota (vamos usar para erros futuramente) */
+	--color-dwl-teal: #1296b0;
+	--color-dwl-blue: #1e5378;
+	--color-dwl-red: #8d0e0a;
+	/* Novas cores da Designer */
+	--color-dwl-bg: #f7f7f7;
+	--color-dwl-border: #747d88;
 }
