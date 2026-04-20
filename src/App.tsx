@@ -1,16 +1,23 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import PrivateRoute from "./components/PrivateRoute"; // Importamos o Guarda!
 
 export default function App() {
 	return (
 		<BrowserRouter>
 			<Routes>
-				{/* Quando a URL for apenas '/', mostra o Login */}
 				<Route path="/" element={<Login />} />
 
-				{/* Quando a URL for '/dashboard', mostra o Painel */}
-				<Route path="/dashboard" element={<Dashboard />} />
+				{/* Olha a mágica: O Dashboard agora é um "Filho" da Rota Privada */}
+				<Route
+					path="/dashboard"
+					element={
+						<PrivateRoute>
+							<Dashboard />
+						</PrivateRoute>
+					}
+				/>
 			</Routes>
 		</BrowserRouter>
 	);

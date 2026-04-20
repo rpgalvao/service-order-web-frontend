@@ -27,12 +27,19 @@ export default function Login() {
 			});
 
 			console.log("Resposta da API:", response.data);
-			const { token, user } = response.data;
-			// Salva no navegador
-			localStorage.setItem("@dwl:token", token);
-			localStorage.setItem("@dwl:user", JSON.stringify(user));
-			// O motorista leva o usuário para a rota do painel!
-			navigate("/dashboard");
+			const token = response.data.token || response.data.data?.token;
+			const user = response.data.user || response.data.data?.user;
+			if (token) {
+				// Salva no navegador
+				localStorage.setItem("@dwl:token", token);
+				localStorage.setItem("@dwl:user", JSON.stringify(user));
+				// O motorista leva o usuário para a rota do painel!
+				navigate("/dashboard");
+			} else {
+				setErrorMessage(
+					"Login efetuado, mas o Token não foi encontrado na resposta.",
+				);
+			}
 		} catch (error: any) {
 			console.error("Erro na requisição:", error);
 			// Pega a mensagem de erro bonita que criamos no nosso AppError do backend
