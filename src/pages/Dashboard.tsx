@@ -2,9 +2,13 @@ import { useState, useEffect } from "react"; // Importamos os superpoderes
 import { useNavigate } from "react-router-dom";
 import logoDwl from "../assets/logo_dwl.png";
 import { api } from "../services/api"; // Importamos a nossa central
+import { PlusCircle, MonitorSmartphone } from "lucide-react";
 
 export default function Dashboard() {
 	const navigate = useNavigate();
+	useEffect(() => {
+		document.title = "Dashboard | DWL Tech Support";
+	}, []);
 	const userStorage = localStorage.getItem("@dwl:user");
 	const user = userStorage ? JSON.parse(userStorage) : null;
 
@@ -131,19 +135,24 @@ export default function Dashboard() {
 					<div className="flex flex-wrap gap-4">
 						{/* Botão Principal: Nova O.S. (Azul preenchido) */}
 						<button
-							onClick={() => navigate("/os/nova")} // Rota que vamos criar no futuro!
+							onClick={() => navigate("/os/nova")}
 							className="flex items-center gap-2 rounded-lg bg-dwl-blue px-6 py-3 font-bold text-white transition-all hover:bg-dwl-teal focus:outline-none focus:ring-2 focus:ring-dwl-blue focus:ring-offset-2 active:scale-95"
 						>
-							<span className="text-xl">➕</span>
+							{/* Ícone vetorizado que respeita a cor branca! */}
+							<PlusCircle className="text-white" size={24} />
 							Nova Ordem de Serviço
 						</button>
 
 						{/* Botão Secundário: Novo Equipamento (Borda azul, fundo branco) */}
 						<button
-							onClick={() => navigate("/equipamentos/novo")} // Rota que vamos criar no futuro!
-							className="flex items-center gap-2 rounded-lg border-2 border-dwl-blue bg-white px-6 py-3 font-bold text-dwl-blue transition-all hover:bg-dwl-blue hover:text-white focus:outline-none focus:ring-2 focus:ring-dwl-blue focus:ring-offset-2 active:scale-95"
+							onClick={() => navigate("/equipamentos/novo")}
+							className="flex items-center gap-2 rounded-lg border-2 border-dwl-blue bg-white px-6 py-3 font-bold text-dwl-blue transition-all hover:bg-dwl-blue hover:text-white focus:outline-none focus:ring-2 focus:ring-dwl-blue focus:ring-offset-2 active:scale-95 group"
 						>
-							<span className="text-xl">💻</span>
+							{/* O group-hover faz o ícone ficar branco junto com o texto quando passa o mouse! */}
+							<MonitorSmartphone
+								className="text-dwl-blue transition-colors group-hover:text-white"
+								size={24}
+							/>
 							Cadastrar Equipamento
 						</button>
 					</div>
