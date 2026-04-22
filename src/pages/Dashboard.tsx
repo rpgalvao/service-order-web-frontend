@@ -7,6 +7,9 @@ import {
 	MonitorSmartphone,
 	ClipboardList,
 	UserPlus,
+	Search,
+	ChevronLeft,
+	ChevronRight,
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -16,14 +19,20 @@ export default function Dashboard() {
 
 	const [loading, setLoading] = useState(true);
 
-	// 1. Ajustado para as chaves exatas que o seu console mostrou: OS (maiúsculo) e Equipment (singular)
+	// Balde das Métricas
 	const [metrics, setMetrics] = useState({
 		openOS: 0,
 		completedOS: 0,
 		totalEquipment: 0,
 	});
 
+	// Balde da lista original
 	const [serviceOrders, setServiceOrders] = useState<any[]>([]);
+
+	// Baldes do Filtro e Paginação
+	const [search, setSearch] = useState("");
+	const [currentPage, setCurrentPage] = useState(1);
+	const itemsPerPage = 5;
 
 	useEffect(() => {
 		document.title = "Painel | DWL Tech Support";
@@ -36,7 +45,6 @@ export default function Dashboard() {
 				]);
 
 				if (metricsRes.data.success) {
-					// Sincronizando com o retorno real do seu Backend
 					setMetrics(metricsRes.data.data);
 				}
 
@@ -88,20 +96,41 @@ export default function Dashboard() {
 		}
 	};
 
+	// 🧠 INTELIGÊNCIA DO FILTRO
+	const filteredOrders = serviceOrders.filter((os) => {
+		const searchLower = search.toLowerCase();
+		const customerName = os.customer?.name?.toLowerCase() || "";
+		const serialNumber = os.equipment?.serial_number?.toLowerCase() || "";
+
+		return (
+			customerName.includes(searchLower) ||
+			serialNumber.includes(searchLower)
+		);
+	});
+
+	// 🧠 INTELIGÊNCIA DA PAGINAÇÃO
+	const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+	const startIndex = (currentPage - 1) * itemsPerPage;
+	const paginatedOrders = filteredOrders.slice(
+		startIndex,
+		startIndex + itemsPerPage,
+	);
+
 	return (
 		<div className="flex min-h-screen flex-col bg-dwl-bg">
-			<header className="flex h-16 items-center justify-between bg-white border-b border-dwl-border/30 px-6 shadow-sm">
-				<div className="flex items-center gap-4">
+			{/* CABEÇALHO */}
+			<header className="flex h-16 items-center justify-between bg-white border-b border-dwl-border/30 px-4 sm:px-6 shadow-sm">
+				<div className="flex items-center gap-3 sm:gap-4">
 					<img
 						src={logoDwl}
 						alt="DWL Logo"
-						className="h-9 w-auto object-contain"
+						className="h-8 sm:h-9 w-auto object-contain"
 					/>
-					<h1 className="text-xl font-extrabold text-dwl-teal hidden sm:block">
+					<h1 className="text-lg sm:text-xl font-extrabold text-dwl-teal hidden sm:block">
 						Tech Support
 					</h1>
 				</div>
-				<div className="flex items-center gap-6">
+				<div className="flex items-center gap-4 sm:gap-6">
 					<div className="text-right hidden sm:block">
 						<p className="text-sm font-semibold text-slate-700">
 							Olá, {user?.name || "Técnico"}
@@ -118,53 +147,73 @@ export default function Dashboard() {
 			</header>
 
 			<main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full">
-				<h2 className="text-2xl font-bold text-slate-800">
+				<h2 className="text-xl sm:text-2xl font-bold text-slate-800">
 					Painel Geral
 				</h2>
 
 				{loading ? (
-					<div className="mt-8 flex justify-center text-dwl-blue font-bold animate-pulse">
-						Sincronizando...
+					<div className="mt-12 flex justify-center text-dwl-blue font-bold animate-pulse">
+						Sincronizando dados...
 					</div>
 				) : (
 					<>
-						{/* Cards com as chaves corrigidas */}
-						<div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+						{/* CARDS DE MÉTRICAS */}
+						<div className="mt-6 sm:mt-8 grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
 							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-red">
-								<h3 className="text-sm font-bold text-slate-500 uppercase">
+								<h3 className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
 									O.S. Pendentes
 								</h3>
-								<p className="mt-2 text-4xl font-extrabold text-slate-800">
+								<p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-800">
 									{metrics.openOS}
 								</p>
 							</div>
 							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-teal">
-								<h3 className="text-sm font-bold text-slate-500 uppercase">
+								<h3 className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
 									O.S. Concluídas
 								</h3>
-								<p className="mt-2 text-4xl font-extrabold text-slate-800">
+								<p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-800">
 									{metrics.completedOS}
 								</p>
 							</div>
 							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-blue">
-								<h3 className="text-sm font-bold text-slate-500 uppercase">
+								<h3 className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
 									Equipamentos
 								</h3>
-								<p className="mt-2 text-4xl font-extrabold text-slate-800">
+								<p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-800">
 									{metrics.totalEquipment}
 								</p>
 							</div>
 						</div>
 
-						{/* Tabela de O.S. com rolagem suave para Mobile */}
-						<div className="mt-10 bg-white rounded-xl border border-dwl-border/30 shadow-sm overflow-hidden">
-							<div className="p-6 border-b border-dwl-border/30 flex items-center gap-2">
+						{/* BARRA DE BUSCA */}
+						<div className="mt-10 mb-4">
+							<div className="relative max-w-md">
+								<input
+									type="text"
+									placeholder="Buscar por cliente ou S/N..."
+									value={search}
+									onChange={(e) => {
+										setSearch(e.target.value);
+										setCurrentPage(1); // Volta pra página 1 ao pesquisar
+									}}
+									className="w-full rounded-lg border border-dwl-border/50 bg-white p-3 pl-10 text-sm focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue shadow-sm"
+								/>
+								<Search
+									className="absolute left-3 top-3 text-slate-400"
+									size={18}
+								/>
+							</div>
+						</div>
+
+						{/* TABELA */}
+						<div className="bg-white rounded-xl border border-dwl-border/30 shadow-sm overflow-hidden">
+							<div className="p-4 sm:p-6 border-b border-dwl-border/30 flex items-center gap-2">
 								<ClipboardList
 									className="text-dwl-blue"
-									size={24}
+									size={20}
 								/>
-								<h3 className="text-lg font-bold text-slate-800">
-									Ordens de Serviço Recentes
+								<h3 className="text-base sm:text-lg font-bold text-slate-800">
+									Ordens de Serviço
 								</h3>
 							</div>
 
@@ -186,18 +235,19 @@ export default function Dashboard() {
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-dwl-border/30">
-										{serviceOrders.length === 0 ? (
+										{paginatedOrders.length === 0 ? (
 											<tr>
 												<td
 													colSpan={5}
 													className="px-6 py-8 text-center text-slate-500 italic"
 												>
-													Nenhuma O.S. aberta no
-													momento.
+													{search
+														? "Nenhuma O.S. encontrada para esta busca."
+														: "Nenhuma O.S. aberta no momento."}
 												</td>
 											</tr>
 										) : (
-											serviceOrders.map((os) => (
+											paginatedOrders.map((os) => (
 												<tr
 													key={os.id}
 													className="hover:bg-slate-50 transition-colors cursor-default"
@@ -232,19 +282,54 @@ export default function Dashboard() {
 									</tbody>
 								</table>
 							</div>
+
+							{/* CONTROLES DE PAGINAÇÃO */}
+							{totalPages > 1 && (
+								<div className="bg-slate-50 border-t border-dwl-border/30 px-6 py-3 flex items-center justify-between">
+									<p className="text-xs font-medium text-slate-500">
+										Página {currentPage} de {totalPages}
+									</p>
+									<div className="flex gap-2">
+										<button
+											disabled={currentPage === 1}
+											onClick={() =>
+												setCurrentPage(
+													(prev) => prev - 1,
+												)
+											}
+											className="flex items-center gap-1 px-3 py-1.5 border border-slate-300 rounded-md text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+										>
+											<ChevronLeft size={14} /> Anterior
+										</button>
+										<button
+											disabled={
+												currentPage === totalPages
+											}
+											onClick={() =>
+												setCurrentPage(
+													(prev) => prev + 1,
+												)
+											}
+											className="flex items-center gap-1 px-3 py-1.5 border border-slate-300 rounded-md text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+										>
+											Próxima <ChevronRight size={14} />
+										</button>
+									</div>
+								</div>
+							)}
 						</div>
 
-						{/* Ações Rápidas: Agora com o botão de Cliente! */}
-						<div className="mt-10 mb-10">
+						{/* AÇÕES RÁPIDAS */}
+						<div className="mt-8 sm:mt-10 mb-10">
 							<h3 className="mb-4 text-lg font-bold text-slate-800">
 								Ações Rápidas
 							</h3>
-							<div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-4">
+							<div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3 sm:gap-4">
 								<button
 									onClick={() => navigate("/os/nova")}
-									className="flex items-center justify-center gap-2 rounded-lg bg-dwl-blue px-6 py-3.5 font-bold text-white transition-all hover:bg-dwl-teal active:scale-95"
+									className="flex items-center justify-center gap-2 rounded-lg bg-dwl-blue px-6 py-3.5 sm:py-3 font-bold text-white transition-all hover:bg-dwl-teal active:scale-95 shadow-sm"
 								>
-									<PlusCircle size={22} />
+									<PlusCircle size={20} />
 									Nova O.S.
 								</button>
 
@@ -252,18 +337,17 @@ export default function Dashboard() {
 									onClick={() =>
 										navigate("/equipamentos/novo")
 									}
-									className="flex items-center justify-center gap-2 rounded-lg border-2 border-dwl-blue bg-white px-6 py-3 font-bold text-dwl-blue transition-all hover:bg-dwl-blue hover:text-white active:scale-95"
+									className="flex items-center justify-center gap-2 rounded-lg border-2 border-dwl-blue bg-white px-6 py-3.5 sm:py-3 font-bold text-dwl-blue transition-all hover:bg-dwl-blue hover:text-white active:scale-95"
 								>
-									<MonitorSmartphone size={22} />
+									<MonitorSmartphone size={20} />
 									Novo Equipamento
 								</button>
 
-								{/* BOTÃO NOVO: Cadastrar Cliente */}
 								<button
 									onClick={() => navigate("/clientes/novo")}
-									className="flex items-center justify-center gap-2 rounded-lg border-2 border-slate-700 bg-white px-6 py-3 font-bold text-slate-700 transition-all hover:bg-slate-700 hover:text-white active:scale-95"
+									className="flex items-center justify-center gap-2 rounded-lg border-2 border-slate-700 bg-white px-6 py-3.5 sm:py-3 font-bold text-slate-700 transition-all hover:bg-slate-700 hover:text-white active:scale-95"
 								>
-									<UserPlus size={22} />
+									<UserPlus size={20} />
 									Novo Cliente
 								</button>
 							</div>

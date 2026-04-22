@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import PrivateRoute from "./components/PrivateRoute";
 import NewOS from "./pages/newOS";
 import NewEquipment from "./pages/NewEquipment";
+import NewCustomer from "./pages/NewCustomer";
 
 export default function App() {
 	return (
@@ -35,6 +36,14 @@ export default function App() {
 					element={
 						<PrivateRoute>
 							<NewEquipment />
+						</PrivateRoute>
+					}
+				/>
+				<Route
+					path="/clientes/novo"
+					element={
+						<PrivateRoute>
+							<NewCustomer />
 						</PrivateRoute>
 					}
 				/>
