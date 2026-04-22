@@ -1,76 +1,62 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, MonitorSmartphone } from "lucide-react";
 import toast from "react-hot-toast";
 import logoDwl from "../assets/logo_dwl.png";
 
-export default function NewOS() {
+export default function NewEquipment() {
 	const navigate = useNavigate();
 
 	const [customers, setCustomers] = useState<any[]>([]);
-	const [equipments, setEquipments] = useState<any[]>([]);
-
 	const [customerId, setCustomerId] = useState("");
-	const [equipmentId, setEquipmentId] = useState("");
-	const [problemDescription, setProblemDescription] = useState("");
+	const [serialNumber, setSerialNumber] = useState("");
+	const [description, setDescription] = useState("");
 
 	const [loading, setLoading] = useState(false);
 	const [pageLoading, setPageLoading] = useState(true);
 
 	useEffect(() => {
-		document.title = "Nova O.S. | DWL Tech Support";
+		document.title = "Novo Equipamento | DWL Tech Support";
 
-		async function loadFormData() {
+		async function loadCustomers() {
 			try {
-				const [customersRes, equipmentsRes] = await Promise.all([
-					api.get("/customer"),
-					api.get("/equipment"),
-				]);
-
-				if (customersRes.data.success) {
-					setCustomers(customersRes.data.data);
-				}
-				if (equipmentsRes.data.success) {
-					setEquipments(equipmentsRes.data.data);
+				const response = await api.get("/customer");
+				if (response.data.success) {
+					setCustomers(response.data.data);
 				}
 			} catch (error) {
-				toast.error("Erro ao carregar dados do sistema.");
+				toast.error("Erro ao carregar lista de clientes.");
 			} finally {
 				setPageLoading(false);
 			}
 		}
 
-		loadFormData();
+		loadCustomers();
 	}, []);
 
-	const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		setCustomerId(e.target.value);
-		setEquipmentId("");
-	};
-
-	const filteredEquipments = equipments.filter(
-		(eq) =>
-			eq.customerId === customerId ||
-			(eq.customer && eq.customer.id === customerId),
-	);
-
-	const handleCreateOS = async (e: React.FormEvent<HTMLFormElement>) => {
+	const handleCreateEquipment = async (
+		e: React.FormEvent<HTMLFormElement>,
+	) => {
 		e.preventDefault();
 		setLoading(true);
 
 		try {
-			await api.post("/serviceorder", {
+			await api.post("/equipment", {
 				customerId,
-				equipmentId,
-				problem_description: problemDescription,
+				serial_number: serialNumber,
+				description,
 			});
 
-			toast.success("Ordem de Serviço aberta com sucesso! 🚀");
+			toast.success("Equipamento cadastrado com sucesso!", {
+				icon: "💻",
+				duration: 4000,
+			});
+
 			navigate("/dashboard");
 		} catch (error: any) {
 			const backendMessage = error.response?.data?.message;
-			toast.error(backendMessage || "Erro ao abrir Ordem de Serviço.");
+			toast.error(backendMessage || "Erro ao cadastrar equipamento.");
 		} finally {
 			setLoading(false);
 		}
@@ -78,7 +64,7 @@ export default function NewOS() {
 
 	return (
 		<div className="flex min-h-screen flex-col bg-dwl-bg">
-			{/* Header com Logo e Alinhamento Corrigido */}
+			{/* Header Alinhado e com Logo */}
 			<header className="flex h-16 items-center justify-between bg-white border-b border-dwl-border/30 px-4 sm:px-6 shadow-sm">
 				<div className="flex items-center gap-3 sm:gap-4">
 					<img
@@ -91,12 +77,13 @@ export default function NewOS() {
 						onClick={() => navigate("/dashboard")}
 						className="flex items-center gap-1.5 font-semibold text-slate-500 transition-colors hover:text-dwl-blue"
 					>
-						<ArrowLeft size={20} className="mt-0.5" />
+						<ArrowLeft size={20} className="mt-0.5" />{" "}
+						{/* mt-0.5 ajusta o alinhamento óptico do ícone */}
 						<span className="text-sm sm:text-base">Painel</span>
 					</button>
 				</div>
 				<h1 className="text-sm sm:text-lg font-extrabold text-dwl-teal truncate">
-					Nova O.S.
+					Novo Equipamento
 				</h1>
 			</header>
 
@@ -104,34 +91,33 @@ export default function NewOS() {
 				<div className="rounded-xl border border-dwl-border/30 bg-white p-6 sm:p-8 shadow-sm">
 					{pageLoading ? (
 						<div className="py-10 text-center font-bold text-dwl-blue animate-pulse">
-							Sincronizando dados...
+							Buscando clientes...
 						</div>
 					) : (
 						<form
-							onSubmit={handleCreateOS}
+							onSubmit={handleCreateEquipment}
 							className="space-y-5 sm:space-y-6"
 						>
 							<div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2">
 								<div>
 									<label className="mb-1.5 block text-sm font-semibold text-slate-700">
-										Cliente
+										Cliente (Proprietário)
 									</label>
 									<select
 										required
 										value={customerId}
-										onChange={handleCustomerChange}
-										// text-base impede o zoom forçado no iOS/Android
+										onChange={(e) =>
+											setCustomerId(e.target.value)
+										}
+										// 'text-base' resolve o zoom do mobile, 'sm:text-sm' volta ao tamanho ideal em telas grandes
 										className="w-full rounded-lg border border-dwl-border/50 bg-white p-3 text-base sm:text-sm text-slate-900 focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue"
 									>
 										<option value="">
-											Selecione um cliente...
+											Selecione o cliente...
 										</option>
-										{customers.map((customer) => (
-											<option
-												key={customer.id}
-												value={customer.id}
-											>
-												{customer.name}
+										{customers.map((c) => (
+											<option key={c.id} value={c.id}>
+												{c.name}
 											</option>
 										))}
 									</select>
@@ -139,48 +125,34 @@ export default function NewOS() {
 
 								<div>
 									<label className="mb-1.5 block text-sm font-semibold text-slate-700">
-										Equipamento
+										Número de Série (S/N)
 									</label>
-									<select
+									<input
+										type="text"
 										required
-										value={equipmentId}
+										placeholder="Ex: BR-123456"
+										value={serialNumber}
 										onChange={(e) =>
-											setEquipmentId(e.target.value)
+											setSerialNumber(e.target.value)
 										}
-										disabled={!customerId}
-										className="w-full rounded-lg border border-dwl-border/50 bg-white p-3 text-base sm:text-sm text-slate-900 focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue disabled:bg-slate-100 disabled:cursor-not-allowed"
-									>
-										<option value="">
-											{!customerId
-												? "Aguardando cliente..."
-												: "Selecione o equipamento..."}
-										</option>
-										{filteredEquipments.map((equipment) => (
-											<option
-												key={equipment.id}
-												value={equipment.id}
-											>
-												{equipment.description} (
-												{equipment.serial_number})
-											</option>
-										))}
-									</select>
+										className="w-full rounded-lg border border-dwl-border/50 bg-white p-3 text-base sm:text-sm text-slate-900 uppercase focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue"
+									/>
 								</div>
 							</div>
 
 							<div>
 								<label className="mb-1.5 block text-sm font-semibold text-slate-700">
-									Defeito Relatado / Problema
+									Descrição do Equipamento
 								</label>
-								<textarea
+								<input
+									type="text"
 									required
-									rows={5}
-									placeholder="Descreva o problema detalhadamente..."
-									value={problemDescription}
+									placeholder="Ex: Cell Dyn Ruby"
+									value={description}
 									onChange={(e) =>
-										setProblemDescription(e.target.value)
+										setDescription(e.target.value)
 									}
-									className="w-full resize-y rounded-lg border border-dwl-border/50 bg-white p-3 text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue"
+									className="w-full rounded-lg border border-dwl-border/50 bg-white p-3 text-base sm:text-sm text-slate-900 focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue"
 								/>
 							</div>
 
@@ -192,8 +164,8 @@ export default function NewOS() {
 								>
 									<Save size={20} />
 									{loading
-										? "Abrindo O.S..."
-										: "Abrir Ordem de Serviço"}
+										? "Salvando..."
+										: "Salvar Equipamento"}
 								</button>
 							</div>
 						</form>

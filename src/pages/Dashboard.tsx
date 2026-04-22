@@ -1,48 +1,57 @@
-import { useState, useEffect } from "react"; // Importamos os superpoderes
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logoDwl from "../assets/logo_dwl.png";
-import { api } from "../services/api"; // Importamos a nossa central
-import { PlusCircle, MonitorSmartphone } from "lucide-react";
+import { api } from "../services/api";
+import {
+	PlusCircle,
+	MonitorSmartphone,
+	ClipboardList,
+	UserPlus,
+} from "lucide-react";
 
 export default function Dashboard() {
 	const navigate = useNavigate();
-	useEffect(() => {
-		document.title = "Dashboard | DWL Tech Support";
-	}, []);
 	const userStorage = localStorage.getItem("@dwl:user");
 	const user = userStorage ? JSON.parse(userStorage) : null;
 
-	// 1. Criamos os "baldes" para guardar as métricas que virão do backend
 	const [loading, setLoading] = useState(true);
+
+	// 1. Ajustado para as chaves exatas que o seu console mostrou: OS (maiúsculo) e Equipment (singular)
 	const [metrics, setMetrics] = useState({
 		openOS: 0,
 		completedOS: 0,
 		totalEquipment: 0,
 	});
 
-	// 2. O useEffect: Dispara essa função UMA ÚNICA VEZ quando a tela abre
+	const [serviceOrders, setServiceOrders] = useState<any[]>([]);
+
 	useEffect(() => {
+		document.title = "Painel | DWL Tech Support";
+
 		async function loadDashboardData() {
 			try {
-				// Tentamos buscar os dados na nossa API (mesmo que a rota ainda não exista lá no backend)
-				const response = await api.get("/dashboard/metrics");
+				const [metricsRes, osRes] = await Promise.all([
+					api.get("/dashboard/metrics"),
+					api.get("/serviceorder"),
+				]);
 
-				console.log("🕵️‍♂️ RESPOSTA DO BACKEND:", response.data);
+				if (metricsRes.data.success) {
+					// Sincronizando com o retorno real do seu Backend
+					setMetrics(metricsRes.data.data);
+				}
 
-				// Se a API responder, atualizamos as métricas
-				if (response.data.success) {
-					setMetrics(response.data.data);
+				if (osRes.data.success) {
+					setServiceOrders(osRes.data.data);
 				}
 			} catch (error) {
-				console.error("Erro ao buscar métricas:", error);
-				// Não vamos travar a tela se der erro, apenas deixamos zerado por enquanto
+				console.error("Erro ao carregar painel:", error);
 			} finally {
-				setLoading(false); // Tiramos a tela de carregamento
+				setLoading(false);
 			}
 		}
 
 		loadDashboardData();
-	}, []); // Essa array vazia [] no final é MUITO importante. Significa: rode apenas ao abrir a tela.
+	}, []);
 
 	const handleLogout = () => {
 		localStorage.removeItem("@dwl:token");
@@ -50,21 +59,50 @@ export default function Dashboard() {
 		navigate("/");
 	};
 
+	const getStatusBadge = (status: string) => {
+		switch (status) {
+			case "ABERTA":
+				return (
+					<span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold">
+						ABERTA
+					</span>
+				);
+			case "FINALIZADA":
+				return (
+					<span className="bg-dwl-teal/20 text-dwl-teal px-3 py-1 rounded-full text-xs font-bold">
+						FINALIZADA
+					</span>
+				);
+			case "CANCELADA":
+				return (
+					<span className="bg-dwl-red/10 text-dwl-red px-3 py-1 rounded-full text-xs font-bold">
+						CANCELADA
+					</span>
+				);
+			default:
+				return (
+					<span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold">
+						{status}
+					</span>
+				);
+		}
+	};
+
 	return (
 		<div className="flex min-h-screen flex-col bg-dwl-bg">
-			<header className="flex items-center justify-between bg-white border-b border-dwl-border/30 px-6 py-4 shadow-sm">
+			<header className="flex h-16 items-center justify-between bg-white border-b border-dwl-border/30 px-6 shadow-sm">
 				<div className="flex items-center gap-4">
 					<img
 						src={logoDwl}
 						alt="DWL Logo"
-						className="h-10 w-auto object-contain"
+						className="h-9 w-auto object-contain"
 					/>
 					<h1 className="text-xl font-extrabold text-dwl-teal hidden sm:block">
 						Tech Support
 					</h1>
 				</div>
 				<div className="flex items-center gap-6">
-					<div className="text-right">
+					<div className="text-right hidden sm:block">
 						<p className="text-sm font-semibold text-slate-700">
 							Olá, {user?.name || "Técnico"}
 						</p>
@@ -79,85 +117,159 @@ export default function Dashboard() {
 				</div>
 			</header>
 
-			<main className="flex-1 p-8">
+			<main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full">
 				<h2 className="text-2xl font-bold text-slate-800">
 					Painel Geral
 				</h2>
-				<p className="mt-2 text-slate-600">
-					Acompanhe as métricas e ordens de serviço da assistência.
-				</p>
 
-				{/* Mostramos um aviso de carregamento enquanto o useEffect trabalha */}
 				{loading ? (
-					<div className="mt-8 flex justify-center text-dwl-blue font-bold">
-						Carregando informações...
+					<div className="mt-8 flex justify-center text-dwl-blue font-bold animate-pulse">
+						Sincronizando...
 					</div>
 				) : (
-					// 3. Os Cards de Métricas!
-					<div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-						{/* Card 1: O.S. Abertas */}
-						<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-red">
-							<h3 className="text-sm font-bold text-slate-500 uppercase">
-								O.S. Pendentes
-							</h3>
-							<p className="mt-2 text-4xl font-extrabold text-slate-800">
-								{metrics.openOS}
-							</p>
+					<>
+						{/* Cards com as chaves corrigidas */}
+						<div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-red">
+								<h3 className="text-sm font-bold text-slate-500 uppercase">
+									O.S. Pendentes
+								</h3>
+								<p className="mt-2 text-4xl font-extrabold text-slate-800">
+									{metrics.openOS}
+								</p>
+							</div>
+							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-teal">
+								<h3 className="text-sm font-bold text-slate-500 uppercase">
+									O.S. Concluídas
+								</h3>
+								<p className="mt-2 text-4xl font-extrabold text-slate-800">
+									{metrics.completedOS}
+								</p>
+							</div>
+							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-blue">
+								<h3 className="text-sm font-bold text-slate-500 uppercase">
+									Equipamentos
+								</h3>
+								<p className="mt-2 text-4xl font-extrabold text-slate-800">
+									{metrics.totalEquipment}
+								</p>
+							</div>
 						</div>
 
-						{/* Card 2: O.S. Concluídas */}
-						<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-teal">
-							<h3 className="text-sm font-bold text-slate-500 uppercase">
-								O.S. Concluídas
-							</h3>
-							<p className="mt-2 text-4xl font-extrabold text-slate-800">
-								{metrics.completedOS}
-							</p>
+						{/* Tabela de O.S. com rolagem suave para Mobile */}
+						<div className="mt-10 bg-white rounded-xl border border-dwl-border/30 shadow-sm overflow-hidden">
+							<div className="p-6 border-b border-dwl-border/30 flex items-center gap-2">
+								<ClipboardList
+									className="text-dwl-blue"
+									size={24}
+								/>
+								<h3 className="text-lg font-bold text-slate-800">
+									Ordens de Serviço Recentes
+								</h3>
+							</div>
+
+							<div className="overflow-x-auto">
+								<table className="w-full text-left text-sm text-slate-600 min-w-[600px]">
+									<thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-xs">
+										<tr>
+											<th className="px-6 py-4">Nº OS</th>
+											<th className="px-6 py-4">
+												Cliente
+											</th>
+											<th className="px-6 py-4">
+												Equipamento
+											</th>
+											<th className="px-6 py-4">Data</th>
+											<th className="px-6 py-4 text-center">
+												Status
+											</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-dwl-border/30">
+										{serviceOrders.length === 0 ? (
+											<tr>
+												<td
+													colSpan={5}
+													className="px-6 py-8 text-center text-slate-500 italic"
+												>
+													Nenhuma O.S. aberta no
+													momento.
+												</td>
+											</tr>
+										) : (
+											serviceOrders.map((os) => (
+												<tr
+													key={os.id}
+													className="hover:bg-slate-50 transition-colors cursor-default"
+												>
+													<td className="px-6 py-4 font-bold text-dwl-blue">
+														#{os.number}
+													</td>
+													<td className="px-6 py-4 font-medium text-slate-800">
+														{os.customer?.name}
+													</td>
+													<td className="px-6 py-4">
+														{
+															os.equipment
+																?.description
+														}
+													</td>
+													<td className="px-6 py-4">
+														{new Date(
+															os.opened_at,
+														).toLocaleDateString(
+															"pt-BR",
+														)}
+													</td>
+													<td className="px-6 py-4 text-center">
+														{getStatusBadge(
+															os.status,
+														)}
+													</td>
+												</tr>
+											))
+										)}
+									</tbody>
+								</table>
+							</div>
 						</div>
 
-						{/* Card 3: Equipamentos na Base */}
-						<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-blue">
-							<h3 className="text-sm font-bold text-slate-500 uppercase">
-								Equipamentos Cadastrados
+						{/* Ações Rápidas: Agora com o botão de Cliente! */}
+						<div className="mt-10 mb-10">
+							<h3 className="mb-4 text-lg font-bold text-slate-800">
+								Ações Rápidas
 							</h3>
-							<p className="mt-2 text-4xl font-extrabold text-slate-800">
-								{metrics.totalEquipment}
-							</p>
+							<div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-4">
+								<button
+									onClick={() => navigate("/os/nova")}
+									className="flex items-center justify-center gap-2 rounded-lg bg-dwl-blue px-6 py-3.5 font-bold text-white transition-all hover:bg-dwl-teal active:scale-95"
+								>
+									<PlusCircle size={22} />
+									Nova O.S.
+								</button>
+
+								<button
+									onClick={() =>
+										navigate("/equipamentos/novo")
+									}
+									className="flex items-center justify-center gap-2 rounded-lg border-2 border-dwl-blue bg-white px-6 py-3 font-bold text-dwl-blue transition-all hover:bg-dwl-blue hover:text-white active:scale-95"
+								>
+									<MonitorSmartphone size={22} />
+									Novo Equipamento
+								</button>
+
+								{/* BOTÃO NOVO: Cadastrar Cliente */}
+								<button
+									onClick={() => navigate("/clientes/novo")}
+									className="flex items-center justify-center gap-2 rounded-lg border-2 border-slate-700 bg-white px-6 py-3 font-bold text-slate-700 transition-all hover:bg-slate-700 hover:text-white active:scale-95"
+								>
+									<UserPlus size={22} />
+									Novo Cliente
+								</button>
+							</div>
 						</div>
-					</div>
+					</>
 				)}
-				{/* --- ADICIONE ESTE BLOCO AQUI: Ações Rápidas --- */}
-				<div className="mt-10">
-					<h3 className="mb-4 text-lg font-bold text-slate-800">
-						Ações Rápidas
-					</h3>
-
-					<div className="flex flex-wrap gap-4">
-						{/* Botão Principal: Nova O.S. (Azul preenchido) */}
-						<button
-							onClick={() => navigate("/os/nova")}
-							className="flex items-center gap-2 rounded-lg bg-dwl-blue px-6 py-3 font-bold text-white transition-all hover:bg-dwl-teal focus:outline-none focus:ring-2 focus:ring-dwl-blue focus:ring-offset-2 active:scale-95"
-						>
-							{/* Ícone vetorizado que respeita a cor branca! */}
-							<PlusCircle className="text-white" size={24} />
-							Nova Ordem de Serviço
-						</button>
-
-						{/* Botão Secundário: Novo Equipamento (Borda azul, fundo branco) */}
-						<button
-							onClick={() => navigate("/equipamentos/novo")}
-							className="flex items-center gap-2 rounded-lg border-2 border-dwl-blue bg-white px-6 py-3 font-bold text-dwl-blue transition-all hover:bg-dwl-blue hover:text-white focus:outline-none focus:ring-2 focus:ring-dwl-blue focus:ring-offset-2 active:scale-95 group"
-						>
-							{/* O group-hover faz o ícone ficar branco junto com o texto quando passa o mouse! */}
-							<MonitorSmartphone
-								className="text-dwl-blue transition-colors group-hover:text-white"
-								size={24}
-							/>
-							Cadastrar Equipamento
-						</button>
-					</div>
-				</div>
-				{/* --- FIM DO BLOCO DE AÇÕES RÁPIDAS --- */}
 			</main>
 		</div>
 	);
