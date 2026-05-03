@@ -1,73 +1,62 @@
-# React + TypeScript + Vite
+# 🛠️ DWL Tech Support - Frontend MVP
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Interface web para gestão de assistência técnica e controle de Ordens de Serviço (O.S.), desenvolvida exclusivamente para a **DWL Diagnóstica**.
 
-Currently, two official plugins are available:
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📌 Sobre o Projeto
 
-## React Compiler
+Este é o frontend (Minimum Viable Product) do sistema de gerenciamento de assistência técnica da DWL Diagnóstica. Ele oferece um painel de controle ágil e responsivo para que os técnicos possam gerenciar o ciclo de vida completo de uma Ordem de Serviço, desde a entrada do equipamento até a emissão do laudo técnico em PDF.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Funcionalidades
 
-## Expanding the ESLint configuration
+- 📊 **Dashboard Gerencial:** Visão 360º com métricas em tempo real de O.S. Pendentes, Concluídas e Canceladas.
+- 👥 **Gestão de Clientes:** Cadastro e edição de perfis de clientes, com visualização da "garagem" de equipamentos atrelados a cada perfil.
+- 💻 **Controle de Equipamentos:** Registro detalhado de máquinas, números de série e status atual na bancada.
+- ⚙️ **Workflow de Ordem de Serviço:**
+    - Abertura detalhada com relato do cliente.
+    - Mudança de status inteligente (ABERTA, FINALIZADA, CANCELADA).
+    - Tratamento de justificativas obrigatórias para cancelamentos.
+- 🖨️ **Gerador Nativo de PDF:** Criação de laudos/recibos profissionais diretamente no navegador, sem dependência de bibliotecas externas, prontos para impressão ou envio por WhatsApp.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🚀 Tecnologias Utilizadas
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **[React](https://reactjs.org/)** - Biblioteca principal para construção da interface.
+- **[TypeScript](https://www.typescriptlang.org/)** - Tipagem estática para maior segurança e escalabilidade.
+- **[Tailwind CSS](https://tailwindcss.com/)** - Estilização utilitária e responsiva.
+- **[React Router](https://reactrouter.com/)** - Roteamento dinâmico da aplicação (Single Page Application).
+- **[Lucide React](https://lucide.dev/)** - Biblioteca de ícones moderna e limpa.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 📦 Como rodar o projeto localmente
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Clone este repositório:
+
+```bash
+   git clone [https://github.com/seu-usuario/nome-do-repo.git](https://github.com/seu-usuario/nome-do-repo.git)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Clone este repositório:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+   cd nome-do-repo
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+3. Instale as dependências:
+
+```bash
+  npm install
+```
+
+4. Crie um arquivo .env na raiz do projeto e configure a URL da sua API (Backend):
+
+```bash
+VITE_API_URL=http://localhost:3333
+```
+
+5. Inicie o servidor de desenvolvimento:
+
+```bash
+npm run dev
 ```

@@ -11,6 +11,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Users,
+	XCircle, // 👈 Ícone novo importado aqui!
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -117,6 +118,11 @@ export default function Dashboard() {
 		startIndex + itemsPerPage,
 	);
 
+	// 👇 CÁLCULO DAS OS CANCELADAS 👇
+	const osCanceladas = serviceOrders.filter(
+		(os) => os.status === "CANCELADA",
+	).length;
+
 	return (
 		<div className="flex min-h-screen flex-col bg-dwl-bg">
 			{/* CABEÇALHO */}
@@ -158,9 +164,9 @@ export default function Dashboard() {
 					</div>
 				) : (
 					<>
-						{/* CARDS DE MÉTRICAS */}
-						<div className="mt-6 sm:mt-8 grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
-							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-red">
+						{/* CARDS DE MÉTRICAS - Agora com 4 colunas! */}
+						<div className="mt-6 sm:mt-8 grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-amber-500">
 								<h3 className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
 									O.S. Pendentes
 								</h3>
@@ -175,6 +181,21 @@ export default function Dashboard() {
 								<p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-800">
 									{metrics.completedOS}
 								</p>
+							</div>
+							{/* 👇 NOVO CARD: O.S. CANCELADAS 👇 */}
+							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-red flex justify-between items-start">
+								<div>
+									<h3 className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
+										O.S. Canceladas
+									</h3>
+									<p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-800">
+										{osCanceladas}
+									</p>
+								</div>
+								<XCircle
+									className="text-dwl-red opacity-20"
+									size={32}
+								/>
 							</div>
 							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-blue">
 								<h3 className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
@@ -251,7 +272,10 @@ export default function Dashboard() {
 											paginatedOrders.map((os) => (
 												<tr
 													key={os.id}
-													className="hover:bg-slate-50 transition-colors cursor-default"
+													onClick={() =>
+														navigate(`/os/${os.id}`)
+													}
+													className="hover:bg-slate-100 transition-colors cursor-pointer"
 												>
 													<td className="px-6 py-4 font-bold text-dwl-blue">
 														#{os.number}
@@ -388,6 +412,16 @@ export default function Dashboard() {
 					</>
 				)}
 			</main>
+			{/* 👇 A ASSINATURA DE MESTRE ENTRA AQUI 👇 */}
+			<footer className="mt-auto py-6 text-center border-t border-dwl-border/20 bg-slate-50/50">
+				<p className="text-xs font-medium text-slate-400 hover:text-slate-500 transition-colors">
+					&copy; 2026 - Todos os direitos reservados - Desenvolvido
+					por{" "}
+					<span className="font-bold text-dwl-blue">
+						@rpg Sistemas
+					</span>
+				</p>
+			</footer>
 		</div>
 	);
 }

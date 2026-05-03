@@ -10,6 +10,7 @@ import Customers from "./pages/Customers";
 import Equipments from "./pages/Equipments";
 import EditCustomer from "./pages/EditCustomer";
 import EditEquipment from "./pages/EditEquipment";
+import OSDetails from "./pages/OSDetails";
 
 export default function App() {
 	return (
@@ -80,6 +81,14 @@ export default function App() {
 					element={
 						<PrivateRoute>
 							<EditEquipment />
+						</PrivateRoute>
+					}
+				/>
+				<Route
+					path="/os/:id"
+					element={
+						<PrivateRoute>
+							<OSDetails />
 						</PrivateRoute>
 					}
 				/>
