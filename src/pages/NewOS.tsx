@@ -86,7 +86,7 @@ export default function NewOS() {
 						alt="DWL Logo"
 						className="h-7 sm:h-8 w-auto opacity-90"
 					/>
-					<div className="h-6 w-[1px] bg-slate-200" />
+					<div className="h-6 w-px bg-slate-200" />
 					<button
 						onClick={() => navigate("/dashboard")}
 						className="flex items-center gap-1.5 font-semibold text-slate-500 transition-colors hover:text-dwl-blue"

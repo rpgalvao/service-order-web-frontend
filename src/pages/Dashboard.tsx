@@ -10,6 +10,7 @@ import {
 	Search,
 	ChevronLeft,
 	ChevronRight,
+	Users,
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -319,37 +320,69 @@ export default function Dashboard() {
 							)}
 						</div>
 
-						{/* AÇÕES RÁPIDAS */}
-						<div className="mt-8 sm:mt-10 mb-10">
-							<h3 className="mb-4 text-lg font-bold text-slate-800">
-								Ações Rápidas
-							</h3>
-							<div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3 sm:gap-4">
-								<button
-									onClick={() => navigate("/os/nova")}
-									className="flex items-center justify-center gap-2 rounded-lg bg-dwl-blue px-6 py-3.5 sm:py-3 font-bold text-white transition-all hover:bg-dwl-teal active:scale-95 shadow-sm"
-								>
-									<PlusCircle size={20} />
-									Nova O.S.
-								</button>
+						{/* MENU DE AÇÕES E GESTÃO */}
+						<div className="mt-8 sm:mt-10 mb-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+							{/* Coluna 1: Ações Rápidas (Criar Novos) */}
+							<div>
+								<h3 className="mb-4 text-lg font-bold text-slate-800">
+									Ações Rápidas
+								</h3>
+								<div className="flex flex-wrap gap-3">
+									<button
+										onClick={() => navigate("/os/nova")}
+										className="flex items-center gap-2 rounded-lg bg-dwl-blue px-5 py-2.5 font-bold text-white transition-all hover:bg-dwl-teal active:scale-95 shadow-sm"
+									>
+										<PlusCircle size={18} /> Nova O.S.
+									</button>
+									<button
+										onClick={() =>
+											navigate("/equipamentos/novo")
+										}
+										className="flex items-center gap-2 rounded-lg border-2 border-dwl-blue bg-white px-5 py-2.5 font-bold text-dwl-blue transition-all hover:bg-dwl-blue hover:text-white active:scale-95"
+									>
+										<MonitorSmartphone size={18} /> Novo
+										Equipamento
+									</button>
+									<button
+										onClick={() =>
+											navigate("/clientes/novo")
+										}
+										className="flex items-center gap-2 rounded-lg border-2 border-slate-700 bg-white px-5 py-2.5 font-bold text-slate-700 transition-all hover:bg-slate-700 hover:text-white active:scale-95"
+									>
+										<UserPlus size={18} /> Novo Cliente
+									</button>
+								</div>
+							</div>
 
-								<button
-									onClick={() =>
-										navigate("/equipamentos/novo")
-									}
-									className="flex items-center justify-center gap-2 rounded-lg border-2 border-dwl-blue bg-white px-6 py-3.5 sm:py-3 font-bold text-dwl-blue transition-all hover:bg-dwl-blue hover:text-white active:scale-95"
-								>
-									<MonitorSmartphone size={20} />
-									Novo Equipamento
-								</button>
-
-								<button
-									onClick={() => navigate("/clientes/novo")}
-									className="flex items-center justify-center gap-2 rounded-lg border-2 border-slate-700 bg-white px-6 py-3.5 sm:py-3 font-bold text-slate-700 transition-all hover:bg-slate-700 hover:text-white active:scale-95"
-								>
-									<UserPlus size={20} />
-									Novo Cliente
-								</button>
+							{/* Coluna 2: Gestão (Listagens) */}
+							<div>
+								<h3 className="mb-4 text-lg font-bold text-slate-800">
+									Gestão e Cadastros
+								</h3>
+								<div className="flex flex-wrap gap-3">
+									<button
+										onClick={() => navigate("/clientes")}
+										className="flex items-center gap-2 rounded-lg bg-slate-100 border border-slate-300 px-5 py-2.5 font-bold text-slate-700 transition-all hover:bg-slate-200 active:scale-95 shadow-sm"
+									>
+										<Users
+											size={18}
+											className="text-dwl-blue"
+										/>{" "}
+										Ver Clientes
+									</button>
+									<button
+										onClick={() =>
+											navigate("/equipamentos")
+										}
+										className="flex items-center gap-2 rounded-lg bg-slate-100 border border-slate-300 px-5 py-2.5 font-bold text-slate-700 transition-all hover:bg-slate-200 active:scale-95 shadow-sm"
+									>
+										<MonitorSmartphone
+											size={18}
+											className="text-dwl-blue"
+										/>{" "}
+										Ver Equipamentos
+									</button>
+								</div>
 							</div>
 						</div>
 					</>

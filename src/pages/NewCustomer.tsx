@@ -40,8 +40,9 @@ export default function NewCustomer() {
 		try {
 			await api.post("/customer", {
 				name,
-				email,
-				phone,
+				// Se estiver vazio (""), envia undefined para o backend não reclamar
+				email: email || undefined,
+				phone: phone || undefined,
 				city,
 				state,
 			});

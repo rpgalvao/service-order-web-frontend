@@ -89,7 +89,7 @@ export default function Login() {
 						<input
 							type="email"
 							required
-							placeholder="tecnico@dwl.com.br"
+							placeholder="tecnico@dwldiagnostica.com"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
 							className="w-full rounded-lg border border-dwl-border/50 bg-white p-3.5 text-slate-900 placeholder-slate-400 focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue transition"
