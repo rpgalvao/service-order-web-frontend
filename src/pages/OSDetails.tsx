@@ -120,7 +120,7 @@ export default function OSDetails() {
 					<div className="flex items-center gap-4">
 						<button
 							onClick={handleGeneratePDF}
-							className="hidden sm:flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-dwl-blue transition-colors"
+							className="hidden sm:flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-dwl-blue transition-colors cursor-pointer"
 						>
 							<FileText size={18} /> Gerar PDF
 						</button>
@@ -174,19 +174,19 @@ export default function OSDetails() {
 								</div>
 							</div>
 
-							{/* Card Datas */}
+							{/* Card Datas e Histórico */}
 							<div className="rounded-xl border border-dwl-border/30 bg-white p-5 shadow-sm">
 								<h3 className="flex items-center gap-2 font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">
 									<CalendarClock
 										size={18}
 										className="text-dwl-blue"
 									/>{" "}
-									Datas
+									Histórico
 								</h3>
-								<div className="space-y-2">
+								<div className="space-y-3">
 									<div>
 										<p className="text-xs font-semibold text-slate-400 uppercase">
-											Entrada
+											Abertura
 										</p>
 										<p className="text-sm font-medium text-slate-700">
 											{new Date(
@@ -201,8 +201,9 @@ export default function OSDetails() {
 											})}
 										</p>
 									</div>
+
 									{osData?.closed_at && (
-										<div className="pt-2">
+										<div>
 											<p className="text-xs font-semibold text-slate-400 uppercase">
 												Fechamento
 											</p>
@@ -222,6 +223,17 @@ export default function OSDetails() {
 											</p>
 										</div>
 									)}
+
+									{/* 👇 NOME DO TÉCNICO AQUI 👇 */}
+									<div className="pt-2 border-t border-slate-100">
+										<p className="text-xs font-semibold text-slate-400 uppercase">
+											Técnico Responsável
+										</p>
+										<p className="text-sm font-bold text-slate-700">
+											{osData?.technician?.name ||
+												"Não atribuído"}
+										</p>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -328,7 +340,7 @@ export default function OSDetails() {
 									<button
 										type="button"
 										onClick={handleGeneratePDF}
-										className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 font-bold text-slate-700 hover:bg-slate-50 active:scale-95 sm:hidden"
+										className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-6 py-3 font-bold text-slate-700 hover:bg-slate-50 active:scale-95 sm:hidden cursor-pointer"
 									>
 										<FileText size={20} /> Gerar PDF
 									</button>
@@ -468,7 +480,7 @@ export default function OSDetails() {
 					</div>
 					<div className="text-center">
 						<div className="border-t-2 border-slate-800 pt-2 font-bold text-sm">
-							Técnico Responsável
+							{osData?.technician?.name || "Técnico Responsável"}
 						</div>
 						<p className="text-xs text-slate-500 mt-1">
 							DWL Diagnóstica

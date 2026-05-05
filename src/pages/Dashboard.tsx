@@ -11,7 +11,8 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Users,
-	XCircle, // 👈 Ícone novo importado aqui!
+	XCircle,
+	FilterX, // Ícone novo para mostrar quando tem filtro
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -34,7 +35,16 @@ export default function Dashboard() {
 	// Baldes do Filtro e Paginação
 	const [search, setSearch] = useState("");
 	const [currentPage, setCurrentPage] = useState(1);
+	// 👇 NOVO: Balde que guarda qual filtro está clicado
+	const [statusFilter, setStatusFilter] = useState<string>("TODAS");
 	const itemsPerPage = 5;
+	// 👇 NOVO: Balde do Filtro de Técnico
+	const [techFilter, setTechFilter] = useState<string>("TODOS");
+
+	// 👇 NOVO: Pega o nome de todos os técnicos da lista sem repetir
+	const technicians = Array.from(
+		new Set(serviceOrders.map((os) => os.technician?.name).filter(Boolean)),
+	);
 
 	useEffect(() => {
 		document.title = "Painel | DWL Tech Support";
@@ -98,16 +108,30 @@ export default function Dashboard() {
 		}
 	};
 
-	// 🧠 INTELIGÊNCIA DO FILTRO
+	// 👇 NOVO: Função que liga e desliga o filtro ao clicar no card
+	const handleFilterClick = (status: string) => {
+		// Se clicar no mesmo filtro que já está ativo, desmarca ele (volta pra TODAS)
+		setStatusFilter((prev) => (prev === status ? "TODAS" : status));
+		setCurrentPage(1); // Volta para a página 1 para não bugar a paginação
+	};
+
+	// 🧠 INTELIGÊNCIA DO FILTRO ATUALIZADA
 	const filteredOrders = serviceOrders.filter((os) => {
 		const searchLower = search.toLowerCase();
 		const customerName = os.customer?.name?.toLowerCase() || "";
 		const serialNumber = os.equipment?.serial_number?.toLowerCase() || "";
 
-		return (
+		const matchesSearch =
 			customerName.includes(searchLower) ||
-			serialNumber.includes(searchLower)
-		);
+			serialNumber.includes(searchLower);
+		const matchesStatus =
+			statusFilter === "TODAS" || os.status === statusFilter;
+
+		// 👇 NOVO: Verifica se a O.S. é do técnico selecionado
+		const matchesTech =
+			techFilter === "TODOS" || os.technician?.name === techFilter;
+
+		return matchesSearch && matchesStatus && matchesTech;
 	});
 
 	// 🧠 INTELIGÊNCIA DA PAGINAÇÃO
@@ -118,7 +142,6 @@ export default function Dashboard() {
 		startIndex + itemsPerPage,
 	);
 
-	// 👇 CÁLCULO DAS OS CANCELADAS 👇
 	const osCanceladas = serviceOrders.filter(
 		(os) => os.status === "CANCELADA",
 	).length;
@@ -164,9 +187,15 @@ export default function Dashboard() {
 					</div>
 				) : (
 					<>
-						{/* CARDS DE MÉTRICAS - Agora com 4 colunas! */}
+						{/* CARDS DE MÉTRICAS INTERATIVOS */}
 						<div className="mt-6 sm:mt-8 grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-amber-500">
+							{/* Card: Pendentes */}
+							<div
+								onClick={() => handleFilterClick("ABERTA")}
+								className={`rounded-xl border bg-white p-6 shadow-sm border-l-4 border-l-amber-500 cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md
+                                    ${statusFilter === "ABERTA" ? "ring-2 ring-amber-500 bg-amber-50" : "border-dwl-border/30"}
+                                `}
+							>
 								<h3 className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
 									O.S. Pendentes
 								</h3>
@@ -174,7 +203,14 @@ export default function Dashboard() {
 									{metrics.openOS}
 								</p>
 							</div>
-							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-teal">
+
+							{/* Card: Concluídas */}
+							<div
+								onClick={() => handleFilterClick("FINALIZADA")}
+								className={`rounded-xl border bg-white p-6 shadow-sm border-l-4 border-l-dwl-teal cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md
+                                    ${statusFilter === "FINALIZADA" ? "ring-2 ring-dwl-teal bg-teal-50" : "border-dwl-border/30"}
+                                `}
+							>
 								<h3 className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
 									O.S. Concluídas
 								</h3>
@@ -182,8 +218,14 @@ export default function Dashboard() {
 									{metrics.completedOS}
 								</p>
 							</div>
-							{/* 👇 NOVO CARD: O.S. CANCELADAS 👇 */}
-							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-red flex justify-between items-start">
+
+							{/* Card: Canceladas */}
+							<div
+								onClick={() => handleFilterClick("CANCELADA")}
+								className={`rounded-xl border bg-white p-6 shadow-sm border-l-4 border-l-dwl-red flex justify-between items-start cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md
+                                    ${statusFilter === "CANCELADA" ? "ring-2 ring-dwl-red bg-red-50" : "border-dwl-border/30"}
+                                `}
+							>
 								<div>
 									<h3 className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
 										O.S. Canceladas
@@ -197,7 +239,12 @@ export default function Dashboard() {
 									size={32}
 								/>
 							</div>
-							<div className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-blue">
+
+							{/* Card: Equipamentos (Agora com navegação!) */}
+							<div
+								onClick={() => navigate("/equipamentos")}
+								className="rounded-xl border border-dwl-border/30 bg-white p-6 shadow-sm border-l-4 border-l-dwl-blue cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md"
+							>
 								<h3 className="text-xs sm:text-sm font-bold text-slate-500 uppercase">
 									Equipamentos
 								</h3>
@@ -207,24 +254,62 @@ export default function Dashboard() {
 							</div>
 						</div>
 
-						{/* BARRA DE BUSCA */}
-						<div className="mt-10 mb-4">
-							<div className="relative max-w-md">
-								<input
-									type="text"
-									placeholder="Buscar por cliente ou S/N..."
-									value={search}
+						{/* BARRA DE BUSCA, FILTRO DE TÉCNICO E AVISO */}
+						<div className="mt-10 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+							<div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+								{/* Input de Busca */}
+								<div className="relative w-full sm:w-80">
+									<input
+										type="text"
+										placeholder="Buscar por cliente ou S/N..."
+										value={search}
+										onChange={(e) => {
+											setSearch(e.target.value);
+											setCurrentPage(1);
+										}}
+										className="w-full rounded-lg border border-dwl-border/50 bg-white p-3 pl-10 text-sm focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue shadow-sm"
+									/>
+									<Search
+										className="absolute left-3 top-3 text-slate-400"
+										size={18}
+									/>
+								</div>
+
+								{/* 👇 NOVO: Select de Técnico 👇 */}
+								<select
+									value={techFilter}
 									onChange={(e) => {
-										setSearch(e.target.value);
-										setCurrentPage(1); // Volta pra página 1 ao pesquisar
+										setTechFilter(e.target.value);
+										setCurrentPage(1);
 									}}
-									className="w-full rounded-lg border border-dwl-border/50 bg-white p-3 pl-10 text-sm focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue shadow-sm"
-								/>
-								<Search
-									className="absolute left-3 top-3 text-slate-400"
-									size={18}
-								/>
+									className="w-full sm:w-48 rounded-lg border border-dwl-border/50 bg-white p-3 text-sm font-semibold text-slate-600 focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue shadow-sm cursor-pointer"
+								>
+									<option value="TODOS">
+										Todos os Técnicos
+									</option>
+									{technicians.map((tech) => (
+										<option
+											key={tech as string}
+											value={tech as string}
+										>
+											{tech as string}
+										</option>
+									))}
+								</select>
 							</div>
+
+							{/* Botão de limpar filtro (só aparece se algum card estiver clicado) */}
+							{statusFilter !== "TODAS" && (
+								<button
+									onClick={() =>
+										handleFilterClick(statusFilter)
+									}
+									className="flex items-center gap-2 text-sm font-bold text-dwl-red hover:text-red-700 transition-colors"
+								>
+									<FilterX size={18} /> Limpar Filtro (
+									{statusFilter})
+								</button>
+							)}
 						</div>
 
 						{/* TABELA */}
@@ -263,8 +348,9 @@ export default function Dashboard() {
 													colSpan={5}
 													className="px-6 py-8 text-center text-slate-500 italic"
 												>
-													{search
-														? "Nenhuma O.S. encontrada para esta busca."
+													{search ||
+													statusFilter !== "TODAS"
+														? "Nenhuma O.S. encontrada para este filtro."
 														: "Nenhuma O.S. aberta no momento."}
 												</td>
 											</tr>
@@ -346,7 +432,6 @@ export default function Dashboard() {
 
 						{/* MENU DE AÇÕES E GESTÃO */}
 						<div className="mt-8 sm:mt-10 mb-10 grid grid-cols-1 md:grid-cols-2 gap-8">
-							{/* Coluna 1: Ações Rápidas (Criar Novos) */}
 							<div>
 								<h3 className="mb-4 text-lg font-bold text-slate-800">
 									Ações Rápidas
@@ -378,7 +463,6 @@ export default function Dashboard() {
 								</div>
 							</div>
 
-							{/* Coluna 2: Gestão (Listagens) */}
 							<div>
 								<h3 className="mb-4 text-lg font-bold text-slate-800">
 									Gestão e Cadastros
@@ -412,11 +496,11 @@ export default function Dashboard() {
 					</>
 				)}
 			</main>
-			{/* 👇 A ASSINATURA DE MESTRE ENTRA AQUI 👇 */}
+
+			{/* RODAPÉ AUTORAL */}
 			<footer className="mt-auto py-6 text-center border-t border-dwl-border/20 bg-slate-50/50">
 				<p className="text-xs font-medium text-slate-400 hover:text-slate-500 transition-colors">
-					&copy; 2026 - Todos os direitos reservados - Desenvolvido
-					por{" "}
+					&copy; 2026 - Todos os direitos reservados - Feito por{" "}
 					<span className="font-bold text-dwl-blue">
 						@rpg Sistemas
 					</span>
