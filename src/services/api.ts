@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// 1. Criamos a nossa central apontando para o backend
+// 1. Criamos a nossa central apontando para o backend (Nuvem ou Local)
 export const api = axios.create({
-    baseURL: 'http://localhost:3333/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3333/api',
 });
 
 // 2. O Interceptor: O nosso pedágio de saída
