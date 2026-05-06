@@ -101,12 +101,14 @@ export default function Login() {
 							<label className="block text-sm font-semibold text-slate-700">
 								Senha
 							</label>
+							{/* 
 							<a
 								href="#"
 								className="text-xs font-medium text-dwl-blue hover:text-dwl-teal transition"
 							>
 								Esqueceu a senha?
 							</a>
+							*/}
 						</div>
 						<input
 							type="password"
