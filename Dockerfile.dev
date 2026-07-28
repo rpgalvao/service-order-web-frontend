@@ -1,0 +1,17 @@
+# Usamos uma imagem leve do Node
+FROM node:20-alpine
+
+# Definimos o diretório de trabalho dentro do container
+WORKDIR /app
+
+# Copiamos os arquivos de dependência primeiro (otimiza o cache do Docker)
+COPY package*.json ./
+
+# Instalamos as dependências
+RUN npm install
+
+# Copiamos o restante do código
+COPY . .
+
+# Comando para iniciar o Vite liberando a porta para fora do container
+CMD ["npm", "run", "dev", "--", "--host"]

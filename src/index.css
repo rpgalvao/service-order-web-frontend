@@ -1,10 +1,9 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-	--color-dwl-teal: #1296b0;
-	--color-dwl-blue: #1e5378;
-	--color-dwl-red: #8d0e0a;
-	/* Novas cores da Designer */
-	--color-dwl-bg: #f7f7f7;
-	--color-dwl-border: #747d88;
+@layer base {
+	body {
+		@apply bg-app-bg text-dwl-light;
+	}
 }
