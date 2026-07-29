@@ -4,6 +4,8 @@
 
 @layer base {
 	body {
-		@apply bg-app-bg text-dwl-light;
+		/* Por padrão aplica o tema claro. Se a classe 'dark' existir, aplica as cores escuras. 
+       O transition-colors cria um efeito de fade suave na troca. */
+		@apply bg-app-lightBg text-dwl-blue dark:bg-app-darkBg dark:text-dwl-light transition-colors duration-300;
 	}
 }
