@@ -24,7 +24,7 @@ export function Header() {
 				<Search className="w-5 h-5 text-dwl-blue/50 dark:text-dwl-grey" />
 				<input
 					type="text"
-					placeholder="Buscar por O.S., Peças ou Clientes..."
+					placeholder="Busca global no sistema (Ex: #1042)..."
 					className="w-full bg-transparent border-none outline-none text-sm px-3 text-dwl-blue dark:text-dwl-light placeholder:text-dwl-blue/50 dark:placeholder:text-dwl-grey"
 				/>
 			</div>
