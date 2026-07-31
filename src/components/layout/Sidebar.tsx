@@ -4,21 +4,20 @@ import {
 	Package,
 	Users,
 	Settings,
+	UserCog, // 1. Adicionamos a importação do ícone para Usuários
 } from "lucide-react";
-// 1. Adicionamos a importação do Link e useLocation
 import { Link, useLocation } from "react-router-dom";
 import logoDwl from "../../assets/logo_dwl.png";
 
 export function Sidebar() {
-	// 2. Lemos a URL atual para saber qual menu pintar de verde
 	const location = useLocation();
 
-	// 3. Adicionamos a propriedade "path" em vez de "active" manual
 	const navItems = [
 		{ label: "Dashboard", path: "/", icon: LayoutDashboard },
 		{ label: "Ordens de Serviço", path: "/ordens", icon: ClipboardList },
 		{ label: "Estoque", path: "/estoque", icon: Package },
 		{ label: "Clientes", path: "/clientes", icon: Users },
+		{ label: "Usuários", path: "/usuarios", icon: UserCog }, // 2. Inserimos o menu de Usuários
 		{ label: "Configurações", path: "/configuracoes", icon: Settings },
 	];
 
@@ -35,11 +34,9 @@ export function Sidebar() {
 			<nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
 				{navItems.map((item) => {
 					const Icon = item.icon;
-					// 4. Se a URL bater com o path, este menu está ativo
 					const isActive = location.pathname === item.path;
 
 					return (
-						// 5. Trocamos de <a> para <Link> e href para to
 						<Link
 							key={item.label}
 							to={item.path}

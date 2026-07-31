@@ -4,6 +4,7 @@ import { Layout } from "./components/layout/Layout";
 import { Dashboard } from "./pages/Dashboard";
 import { Orders } from "./pages/Orders";
 import { Login } from "./pages/Login";
+import { Users } from "./pages/Users";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // Componente que atua como "Leão de Chácara" das rotas
@@ -37,6 +38,16 @@ export default function App() {
 							<PrivateRoute>
 								<Layout>
 									<Orders />
+								</Layout>
+							</PrivateRoute>
+						}
+					/>
+					<Route
+						path="/usuarios"
+						element={
+							<PrivateRoute>
+								<Layout>
+									<Users />
 								</Layout>
 							</PrivateRoute>
 						}

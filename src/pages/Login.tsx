@@ -1,14 +1,22 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react"; // Ícone para voltar ao login
 import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import logoDwl from "../assets/logo_dwl.png";
 
 export function Login() {
+	// Estados do Login
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
+
+	// Estados da Recuperação de Senha
+	const [isRecovering, setIsRecovering] = useState(false);
+	const [recoveryEmail, setRecoveryEmail] = useState("");
+	const [recoveryMessage, setRecoveryMessage] = useState("");
+
 	const { login } = useAuth();
 	const navigate = useNavigate();
 
@@ -17,70 +25,161 @@ export function Login() {
 		setError("");
 
 		try {
-			// Ajuste '/auth/login' para a rota exata do seu backend
-			const response = await api.post("/auth/login", { email, password });
-
-			// Assumindo que seu backend retorna { token: "..." }
-			login(response.data.token);
-			navigate("/"); // Redireciona para o Dashboard
+			const response = await api.post("/login", { email, password });
+			login(response.data.data.token);
+			navigate("/");
 		} catch (err) {
 			setError("Credenciais inválidas. Tente novamente.");
 		}
 	};
 
+	const handleRecovery = async (e: FormEvent) => {
+		e.preventDefault();
+		setRecoveryMessage("");
+
+		try {
+			// TODO: Descomentar e ajustar a rota quando o backend estiver pronto
+			// await api.post('/auth/forgot-password', { email: recoveryEmail });
+
+			// Simulando o sucesso visualmente por enquanto:
+			setRecoveryMessage(
+				"Se o e-mail estiver cadastrado, você receberá um link de recuperação em breve.",
+			);
+			setRecoveryEmail("");
+		} catch (err) {
+			setError("Ocorreu um erro ao tentar recuperar a senha.");
+		}
+	};
+
+	// Reseta as mensagens ao alternar entre as telas
+	const toggleMode = () => {
+		setIsRecovering(!isRecovering);
+		setError("");
+		setRecoveryMessage("");
+	};
+
 	return (
-		<div className="min-h-screen bg-app-background flex items-center justify-center p-4">
-			<div className="max-w-md w-full bg-app-lightSurface dark:bg-app-darkSurface rounded-2xl shadow-xl border border-app-border p-8">
+		<div className="min-h-screen bg-app-background flex items-center justify-center p-4 transition-colors duration-300">
+			<div className="max-w-md w-full bg-app-lightSurface dark:bg-app-darkSurface rounded-2xl shadow-xl border border-app-border p-8 transition-all duration-300">
 				<div className="flex justify-center mb-8">
 					<img
 						src={logoDwl}
 						alt="DWL Diagnóstica"
-						className="h-16 w-auto dark:drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]"
+						className="h-16 w-auto transition-all duration-300 dark:drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]"
 					/>
 				</div>
 
-				<h2 className="text-2xl font-bold text-center text-dwl-blue dark:text-dwl-light mb-6">
-					Acesso ao Sistema
-				</h2>
+				{/* --- TELA DE RECUPERAÇÃO DE SENHA --- */}
+				{isRecovering ? (
+					<div className="animate-in fade-in slide-in-from-right-4 duration-300">
+						<h2 className="text-2xl font-bold text-center text-dwl-blue dark:text-dwl-light mb-2 transition-colors">
+							Recuperar Senha
+						</h2>
+						<p className="text-sm text-center text-dwl-blue/70 dark:text-dwl-grey mb-6 transition-colors">
+							Digite seu e-mail para receber as instruções de
+							redefinição.
+						</p>
 
-				{error && (
-					<div className="bg-red-500/10 border border-red-500/20 text-red-600 text-sm p-3 rounded-lg mb-4 text-center">
-						{error}
+						{recoveryMessage && (
+							<div className="bg-dwl-teal/10 border border-dwl-teal/20 text-dwl-teal dark:text-dwl-cyan text-sm p-3 rounded-lg mb-4 text-center">
+								{recoveryMessage}
+							</div>
+						)}
+
+						<form onSubmit={handleRecovery} className="space-y-4">
+							<div>
+								<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1 transition-colors">
+									E-mail
+								</label>
+								<input
+									type="email"
+									required
+									value={recoveryEmail}
+									onChange={(e) =>
+										setRecoveryEmail(e.target.value)
+									}
+									placeholder="Seu e-mail cadastrado"
+									className="w-full px-4 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal outline-none transition-colors"
+								/>
+							</div>
+
+							<button
+								type="submit"
+								className="w-full bg-dwl-teal hover:bg-dwl-teal/90 text-white font-medium py-2.5 rounded-lg transition-colors mt-2 shadow-sm"
+							>
+								Enviar link de recuperação
+							</button>
+
+							<button
+								type="button"
+								onClick={toggleMode}
+								className="w-full flex items-center justify-center gap-2 text-sm text-dwl-blue/70 dark:text-dwl-grey hover:text-dwl-teal dark:hover:text-dwl-cyan transition-colors mt-4"
+							>
+								<ArrowLeft className="w-4 h-4" />
+								Voltar para o login
+							</button>
+						</form>
+					</div>
+				) : (
+					/* --- TELA DE LOGIN PRINCIPAL --- */
+					<div className="animate-in fade-in slide-in-from-left-4 duration-300">
+						<h2 className="text-2xl font-bold text-center text-dwl-blue dark:text-dwl-light mb-6 transition-colors">
+							Acesso ao Sistema
+						</h2>
+
+						{error && (
+							<div className="bg-red-500/10 border border-red-500/20 text-red-600 text-sm p-3 rounded-lg mb-4 text-center transition-colors">
+								{error}
+							</div>
+						)}
+
+						<form onSubmit={handleLogin} className="space-y-4">
+							<div>
+								<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1 transition-colors">
+									E-mail
+								</label>
+								<input
+									type="email"
+									required
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									className="w-full px-4 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal outline-none transition-colors"
+								/>
+							</div>
+							<div>
+								<div className="flex items-center justify-between mb-1">
+									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light transition-colors">
+										Senha
+									</label>
+									{/* Link para abrir a recuperação de senha */}
+									<button
+										type="button"
+										onClick={toggleMode}
+										tabIndex={-1}
+										className="text-xs font-medium text-dwl-teal dark:text-dwl-cyan hover:underline transition-all"
+									>
+										Esqueceu a senha?
+									</button>
+								</div>
+								<input
+									type="password"
+									required
+									value={password}
+									onChange={(e) =>
+										setPassword(e.target.value)
+									}
+									className="w-full px-4 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal outline-none transition-colors"
+								/>
+							</div>
+							<button
+								type="submit"
+								className="w-full bg-dwl-teal hover:bg-dwl-teal/90 text-white font-medium py-2.5 rounded-lg transition-colors mt-2 shadow-sm"
+							>
+								Entrar
+							</button>
+						</form>
 					</div>
 				)}
-
-				<form onSubmit={handleLogin} className="space-y-4">
-					<div>
-						<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1">
-							E-mail
-						</label>
-						<input
-							type="email"
-							required
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							className="w-full px-4 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal outline-none"
-						/>
-					</div>
-					<div>
-						<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1">
-							Senha
-						</label>
-						<input
-							type="password"
-							required
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							className="w-full px-4 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal outline-none"
-						/>
-					</div>
-					<button
-						type="submit"
-						className="w-full bg-dwl-teal hover:bg-dwl-teal/90 text-white font-medium py-2.5 rounded-lg transition-colors mt-2"
-					>
-						Entrar
-					</button>
-				</form>
 			</div>
 		</div>
 	);
