@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { X } from "lucide-react";
 import { userService } from "../../services/userService";
+import { formatPhone } from "../../utils/formatters";
 
 interface NewUserDrawerProps {
 	isOpen: boolean;
@@ -130,7 +131,10 @@ export function NewUserDrawer({
 							<input
 								type="text"
 								value={phone}
-								onChange={(e) => setPhone(e.target.value)}
+								// AJUSTE AQUI: O valor já vai para o estado formatado
+								onChange={(e) =>
+									setPhone(formatPhone(e.target.value))
+								}
 								placeholder="(00) 00000-0000"
 								className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:outline-none focus:ring-1 focus:ring-dwl-teal transition-colors"
 							/>

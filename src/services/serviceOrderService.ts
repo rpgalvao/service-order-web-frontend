@@ -1,0 +1,48 @@
+import { api } from '../lib/api';
+
+// O que vamos enviar para o backend (Baseado no seu openServiceOrderSchema)
+export interface CreateServiceOrderPayload {
+    customerId: string;
+    equipmentId: string;
+    type: 'INSTALACAO' | 'PREVENTIVA' | 'CORRETIVA';
+    problem_description: string;
+    solution_description?: string;
+}
+
+// Estrutura básica do retorno do Prisma para listagem
+export interface ServiceOrder {
+    id: string;
+    number: number; // Número sequencial da O.S.
+    type: 'INSTALACAO' | 'PREVENTIVA' | 'CORRETIVA';
+    status: 'ABERTA' | 'FINALIZADA' | 'CANCELADA';
+    problem_description: string;
+    opened_at: string;
+
+    // Relacionamentos que o Prisma geralmente traz com o "include"
+    customer?: { name: string; };
+    equipment?: { serial_number: string; model?: { name: string; }; };
+    openedBy?: { name: string; };
+}
+
+export const serviceOrderService = {
+
+    getOrders: async (): Promise<ServiceOrder[]> => {
+        // Verifique se no seu backend a rota foi registrada como /service-orders ou /service-order
+        const response = await api.get('/serviceorder');
+        return response.data.data;
+    },
+
+    createOrder: async (data: CreateServiceOrderPayload): Promise<ServiceOrder> => {
+        const response = await api.post('/serviceorder', data);
+        return response.data.data;
+    },
+
+    // Já deixamos as chamadas de ciclo de vida mapeadas para o futuro
+    cancelOrder: async (id: string, reason: string): Promise<void> => {
+        await api.patch(`/serviceorder/${id}/cancel`, { reason });
+    },
+
+    reopenOrder: async (id: string): Promise<void> => {
+        await api.patch(`/serviceorder/${id}/reopen`);
+    }
+};

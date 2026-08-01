@@ -8,12 +8,16 @@ import {
 } from "lucide-react";
 import { userService, type User } from "../services/userService";
 import { NewUserDrawer } from "../components/ui/NewUserDrawer";
+import { formatPhone } from "../utils/formatters";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Users() {
 	const [users, setUsers] = useState<User[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+	const { user } = useAuth();
 
 	const loadUsers = useCallback(async () => {
 		setIsLoading(true);
@@ -52,14 +56,16 @@ export function Users() {
 					</p>
 				</div>
 
-				{/* TODO: Vamos ocultar este botão para quem não for ADMIN depois */}
-				<button
-					onClick={() => setIsDrawerOpen(true)}
-					className="flex items-center gap-2 px-4 py-2 bg-dwl-teal hover:bg-dwl-teal/90 text-white rounded-lg text-sm font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
-				>
-					<Plus className="w-5 h-5" />
-					Novo Usuário
-				</button>
+				{/* Renderiza o botão APENAS se o usuário logado for ADMIN */}
+				{user?.role === "ADMIN" && (
+					<button
+						onClick={() => setIsDrawerOpen(true)}
+						className="flex items-center gap-2 px-4 py-2 bg-dwl-teal hover:bg-dwl-teal/90 text-white rounded-lg text-sm font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
+					>
+						<Plus className="w-5 h-5" />
+						Novo Usuário
+					</button>
+				)}
 			</div>
 
 			{/* Barra de Ferramentas */}
@@ -133,7 +139,10 @@ export function Users() {
 											{user.email}
 										</td>
 										<td className="px-6 py-4 text-sm text-dwl-blue/70 dark:text-dwl-grey whitespace-nowrap">
-											{user.phone || "-"}
+											{/* AJUSTE AQUI: Formatando na exibição */}
+											{user.phone
+												? formatPhone(user.phone)
+												: "-"}
 										</td>
 										<td className="px-6 py-4 whitespace-nowrap">
 											{user.role === "ADMIN" ? (
