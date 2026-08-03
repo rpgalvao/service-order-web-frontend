@@ -13,8 +13,10 @@ import {
 	type ServiceOrder,
 } from "../services/serviceOrderService";
 import { NewServiceOrderDrawer } from "../components/ui/NewServiceOrderDrawer";
+import { useNavigate } from "react-router-dom";
 
 export function Orders() {
+	const navigate = useNavigate();
 	const [orders, setOrders] = useState<ServiceOrder[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
@@ -198,6 +200,9 @@ export function Orders() {
 								filteredOrders.map((os) => (
 									<tr
 										key={os.id}
+										onClick={() =>
+											navigate(`/ordens/${os.id}`)
+										}
 										className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors group cursor-pointer"
 									>
 										<td className="px-6 py-4">

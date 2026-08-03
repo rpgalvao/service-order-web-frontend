@@ -44,5 +44,10 @@ export const serviceOrderService = {
 
     reopenOrder: async (id: string): Promise<void> => {
         await api.patch(`/serviceorder/${id}/reopen`);
-    }
+    },
+
+    getOrderById: async (id: string): Promise<ServiceOrder> => {
+        const response = await api.get(`/serviceorder/${id}`);
+        return response.data.data;
+    },
 };
