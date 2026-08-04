@@ -6,11 +6,14 @@ import {
 	CheckSquare,
 	Wrench,
 	AlertCircle,
+	RefreshCw,
 } from "lucide-react";
 import {
 	serviceOrderService,
 	type ServiceOrder,
 } from "../services/serviceOrderService";
+import { CancelOrderModal } from "../components/ui/CancelOrderModal";
+import { FinishOrderModal } from "../components/ui/FinishOrderModal";
 
 type TabType = "VISAO_GERAL" | "CHECKLIST" | "PECAS";
 
@@ -23,6 +26,10 @@ export function OrderDetails() {
 	const [error, setError] = useState("");
 	const [activeTab, setActiveTab] = useState<TabType>("VISAO_GERAL");
 
+	// Estados dos Modais
+	const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+	const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
+
 	const loadOrderDetails = useCallback(async () => {
 		if (!id) return;
 		setIsLoading(true);
@@ -30,10 +37,8 @@ export function OrderDetails() {
 			const data = await serviceOrderService.getOrderById(id);
 			setOrder(data);
 		} catch (err: any) {
-			console.error("Erro ao buscar detalhes da O.S.:", err);
-			setError(
-				"Não foi possível carregar as informações desta Ordem de Serviço.",
-			);
+			console.error("Erro ao buscar detalhes:", err);
+			setError("Não foi possível carregar as informações.");
 		} finally {
 			setIsLoading(false);
 		}
@@ -42,6 +47,47 @@ export function OrderDetails() {
 	useEffect(() => {
 		loadOrderDetails();
 	}, [loadOrderDetails]);
+
+	// --- Funções do Ciclo de Vida da O.S. ---
+
+	const handleCancelOrder = async (reason: string) => {
+		if (!id) return;
+		try {
+			await serviceOrderService.cancelOrder(id, reason);
+			setIsCancelModalOpen(false);
+			loadOrderDetails(); // Recarrega para atualizar o status e a tela
+		} catch (err) {
+			alert("Erro ao cancelar a O.S.");
+		}
+	};
+
+	const handleFinishOrder = async (solution: string) => {
+		if (!id) return;
+		try {
+			await serviceOrderService.updateOrder(id, {
+				status: "FINALIZADA",
+				solution_description: solution,
+			});
+			setIsFinishModalOpen(false);
+			loadOrderDetails();
+		} catch (err) {
+			alert("Erro ao finalizar a O.S.");
+		}
+	};
+
+	const handleReopenOrder = async () => {
+		if (!id) return;
+		if (!confirm("Deseja realmente reabrir esta Ordem de Serviço?")) return;
+
+		try {
+			await serviceOrderService.reopenOrder(id);
+			loadOrderDetails();
+		} catch (err) {
+			alert("Erro ao reabrir a O.S.");
+		}
+	};
+
+	// ----------------------------------------
 
 	if (isLoading) {
 		return (
@@ -69,7 +115,7 @@ export function OrderDetails() {
 
 	return (
 		<div className="flex flex-col h-full animate-in fade-in duration-300">
-			{/* Cabeçalho do Painel */}
+			{/* Cabeçalho */}
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
 				<div className="flex items-center gap-4">
 					<button
@@ -86,100 +132,239 @@ export function OrderDetails() {
 							<span
 								className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
 									order.status === "ABERTA"
-										? "bg-blue-50 text-blue-700 border-blue-200"
+										? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20"
 										: order.status === "FINALIZADA"
-											? "bg-green-50 text-green-700 border-green-200"
-											: "bg-red-50 text-red-700 border-red-200"
+											? "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20"
+											: "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
 								}`}
 							>
 								{order.status}
 							</span>
 						</div>
 						<p className="text-sm text-dwl-blue/70 dark:text-dwl-grey mt-1 transition-colors">
-							{order.customer?.name} • S/N:{" "}
+							{order.customer?.name || "Estoque Interno"} • S/N:{" "}
 							{order.equipment?.serial_number}
 						</p>
 					</div>
 				</div>
 
-				{/* Botões de Ação Rápida (Faremos depois) */}
+				{/* Botões Dinâmicos do Ciclo de Vida */}
 				<div className="flex gap-2">
 					{order.status === "ABERTA" && (
-						<button className="px-4 py-2 bg-dwl-teal text-white rounded-lg text-sm font-medium hover:bg-dwl-teal/90 transition-colors shadow-sm">
-							Finalizar O.S.
+						<>
+							<button
+								onClick={() => setIsCancelModalOpen(true)}
+								className="px-4 py-2 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+							>
+								Cancelar
+							</button>
+							<button
+								onClick={() => setIsFinishModalOpen(true)}
+								className="px-4 py-2 bg-dwl-teal text-white rounded-lg text-sm font-medium hover:bg-dwl-teal/90 transition-colors shadow-sm"
+							>
+								Finalizar O.S.
+							</button>
+						</>
+					)}
+
+					{(order.status === "FINALIZADA" ||
+						order.status === "CANCELADA") && (
+						<button
+							onClick={handleReopenOrder}
+							className="flex items-center gap-2 px-4 py-2 border border-app-border bg-black/5 dark:bg-white/5 text-dwl-blue dark:text-dwl-light rounded-lg text-sm font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+						>
+							<RefreshCw className="w-4 h-4" />
+							Reabrir O.S.
 						</button>
 					)}
 				</div>
 			</div>
 
-			{/* Container Principal com Abas */}
 			<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm flex flex-col flex-1 overflow-hidden transition-colors duration-300">
-				{/* Navegação das Abas */}
+				{/* Navegação */}
 				<div className="flex border-b border-app-border bg-black/5 dark:bg-white/5">
 					<button
 						onClick={() => setActiveTab("VISAO_GERAL")}
-						className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${
-							activeTab === "VISAO_GERAL"
-								? "border-dwl-teal text-dwl-teal bg-app-lightSurface dark:bg-app-darkSurface"
-								: "border-transparent text-dwl-blue/70 dark:text-dwl-grey hover:text-dwl-blue dark:hover:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5"
-						}`}
+						className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${activeTab === "VISAO_GERAL" ? "border-dwl-teal text-dwl-teal bg-app-lightSurface dark:bg-app-darkSurface" : "border-transparent text-dwl-blue/70 dark:text-dwl-grey hover:text-dwl-blue dark:hover:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5"}`}
 					>
-						<ClipboardList className="w-4 h-4" />
-						Visão Geral
+						<ClipboardList className="w-4 h-4" /> Visão Geral
 					</button>
 					<button
 						onClick={() => setActiveTab("CHECKLIST")}
-						className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${
-							activeTab === "CHECKLIST"
-								? "border-dwl-teal text-dwl-teal bg-app-lightSurface dark:bg-app-darkSurface"
-								: "border-transparent text-dwl-blue/70 dark:text-dwl-grey hover:text-dwl-blue dark:hover:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5"
-						}`}
+						className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${activeTab === "CHECKLIST" ? "border-dwl-teal text-dwl-teal bg-app-lightSurface dark:bg-app-darkSurface" : "border-transparent text-dwl-blue/70 dark:text-dwl-grey hover:text-dwl-blue dark:hover:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5"}`}
 					>
-						<CheckSquare className="w-4 h-4" />
-						Checklist
+						<CheckSquare className="w-4 h-4" /> Checklist
 					</button>
 					<button
 						onClick={() => setActiveTab("PECAS")}
-						className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${
-							activeTab === "PECAS"
-								? "border-dwl-teal text-dwl-teal bg-app-lightSurface dark:bg-app-darkSurface"
-								: "border-transparent text-dwl-blue/70 dark:text-dwl-grey hover:text-dwl-blue dark:hover:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5"
-						}`}
+						className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 ${activeTab === "PECAS" ? "border-dwl-teal text-dwl-teal bg-app-lightSurface dark:bg-app-darkSurface" : "border-transparent text-dwl-blue/70 dark:text-dwl-grey hover:text-dwl-blue dark:hover:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5"}`}
 					>
-						<Wrench className="w-4 h-4" />
-						Peças Utilizadas
+						<Wrench className="w-4 h-4" /> Peças Utilizadas
 					</button>
 				</div>
 
-				{/* Conteúdo da Aba Ativa */}
+				{/* Conteúdo Aba */}
 				<div className="flex-1 overflow-auto p-6">
 					{activeTab === "VISAO_GERAL" && (
-						<div className="text-dwl-blue dark:text-dwl-light">
-							<h3 className="font-bold mb-2">
-								Relato Inicial do Problema:
-							</h3>
-							<p className="p-4 bg-black/5 dark:bg-white/5 rounded-lg border border-app-border">
-								{order.problem_description}
-							</p>
-							{/* Adicionaremos mais detalhes aqui no próximo passo */}
+						<div className="space-y-6 text-dwl-blue dark:text-dwl-light animate-in fade-in">
+							{/* Grid de Informações Básicas e Datas */}
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+								{/* Dados do Equipamento */}
+								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border">
+									<h3 className="text-xs font-bold text-dwl-teal mb-4 uppercase tracking-wider">
+										Dados do Equipamento
+									</h3>
+									<div className="space-y-2 text-sm">
+										<p>
+											<span className="opacity-70">
+												Número de Série:
+											</span>{" "}
+											<span className="font-medium float-right">
+												{order.equipment?.serial_number}
+											</span>
+										</p>
+										<p>
+											<span className="opacity-70">
+												Modelo Base:
+											</span>{" "}
+											<span className="font-medium float-right">
+												{order.equipment?.model?.name ||
+													"N/A"}
+											</span>
+										</p>
+										<p>
+											<span className="opacity-70">
+												Natureza do Serviço:
+											</span>{" "}
+											<span className="font-medium float-right">
+												{order.type}
+											</span>
+										</p>
+									</div>
+								</div>
+
+								{/* Histórico de Datas Enriquecido */}
+								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border">
+									<h3 className="text-xs font-bold text-dwl-teal mb-4 uppercase tracking-wider">
+										Histórico de Datas
+									</h3>
+									<div className="space-y-2 text-sm">
+										<p>
+											<span className="opacity-70">
+												Abertura:
+											</span>{" "}
+											<span className="font-medium float-right">
+												{new Date(
+													order.opened_at,
+												).toLocaleString("pt-BR")}
+											</span>
+										</p>
+										<p>
+											<span className="opacity-70">
+												Aberto Por:
+											</span>{" "}
+											<span className="font-medium float-right">
+												{order.openedBy?.name ||
+													"Sistema"}
+											</span>
+										</p>
+
+										{/* Exibe o encerramento apenas se existir a data de fechamento */}
+										{order.closed_at && (
+											<>
+												<div className="border-t border-app-border my-2 pt-2"></div>
+												<p>
+													<span className="opacity-70">
+														{order.status ===
+														"CANCELADA"
+															? "Cancelamento:"
+															: "Finalização:"}
+													</span>
+													<span className="font-medium float-right">
+														{new Date(
+															order.closed_at,
+														).toLocaleString(
+															"pt-BR",
+														)}
+													</span>
+												</p>
+												<p>
+													<span className="opacity-70">
+														Responsável:
+													</span>
+													<span className="font-medium float-right">
+														{order.closedBy?.name ||
+															"Sistema"}
+													</span>
+												</p>
+											</>
+										)}
+									</div>
+								</div>
+							</div>
+
+							{/* Relato Original */}
+							<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border">
+								<h3 className="text-xs font-bold text-dwl-teal mb-3 uppercase tracking-wider">
+									Relato do Problema
+								</h3>
+								<p className="text-sm leading-relaxed">
+									{order.problem_description}
+								</p>
+							</div>
+
+							{/* Motivo do Cancelamento (Caixa Vermelha) */}
+							{order.status === "CANCELADA" &&
+								order.cancellation_reason && (
+									<div className="p-4 bg-red-500/10 rounded-xl border border-red-500/20">
+										<h3 className="text-xs font-bold text-red-700 dark:text-red-400 mb-3 uppercase tracking-wider">
+											Motivo do Cancelamento
+										</h3>
+										<p className="text-sm leading-relaxed text-red-800 dark:text-red-300">
+											{order.cancellation_reason}
+										</p>
+									</div>
+								)}
+
+							{/* Solução Aplicada (Caixa Verde) */}
+							{order.status === "FINALIZADA" &&
+								order.solution_description && (
+									<div className="p-4 bg-green-500/10 rounded-xl border border-green-500/20">
+										<h3 className="text-xs font-bold text-green-700 dark:text-green-400 mb-3 uppercase tracking-wider">
+											Solução Aplicada
+										</h3>
+										<p className="text-sm leading-relaxed text-green-800 dark:text-green-300">
+											{order.solution_description}
+										</p>
+									</div>
+								)}
 						</div>
 					)}
 
 					{activeTab === "CHECKLIST" && (
-						<div className="text-center py-12 text-dwl-blue/50 dark:text-dwl-grey">
-							<CheckSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-							<p>O módulo de checklist será construído aqui.</p>
+						<div className="text-center py-12 opacity-50">
+							Em construção...
 						</div>
 					)}
-
 					{activeTab === "PECAS" && (
-						<div className="text-center py-12 text-dwl-blue/50 dark:text-dwl-grey">
-							<Wrench className="w-12 h-12 mx-auto mb-3 opacity-50" />
-							<p>O catálogo e aplicação de peças entrará aqui.</p>
+						<div className="text-center py-12 opacity-50">
+							Em construção...
 						</div>
 					)}
 				</div>
 			</div>
+
+			<CancelOrderModal
+				isOpen={isCancelModalOpen}
+				onClose={() => setIsCancelModalOpen(false)}
+				onConfirm={handleCancelOrder}
+			/>
+
+			<FinishOrderModal
+				isOpen={isFinishModalOpen}
+				onClose={() => setIsFinishModalOpen(false)}
+				onConfirm={handleFinishOrder}
+			/>
 		</div>
 	);
 }

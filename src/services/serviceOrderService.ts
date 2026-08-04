@@ -18,10 +18,16 @@ export interface ServiceOrder {
     problem_description: string;
     opened_at: string;
 
+    // Fechamento e/ou cancelamento da O.S.
+    closed_at?: string | null;
+    cancellation_reason?: string | null;
+    solution_description?: string | null;
+
     // Relacionamentos que o Prisma geralmente traz com o "include"
     customer?: { name: string; };
     equipment?: { serial_number: string; model?: { name: string; }; };
     openedBy?: { name: string; };
+    closedBy?: { name: string; };
 }
 
 export const serviceOrderService = {
@@ -50,4 +56,10 @@ export const serviceOrderService = {
         const response = await api.get(`/serviceorder/${id}`);
         return response.data.data;
     },
+
+    updateOrder: async (id: string, data: { status?: string; solution_description?: string; }): Promise<ServiceOrder> => {
+        const response = await api.put(`/serviceorder/${id}`, data);
+        return response.data.data;
+    },
+
 };

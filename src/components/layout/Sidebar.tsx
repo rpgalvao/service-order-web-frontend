@@ -6,10 +6,14 @@ import {
 	Settings,
 	UserCog,
 	Monitor,
-	X, // Ícone para fechar no mobile
+	X,
+	FileSignature,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import logoDwl from "../../assets/logo_dwl.png";
+
+// 1. Importamos o seu hook de autenticação
+import { useAuth } from "../../contexts/AuthContext";
 
 interface SidebarProps {
 	isOpen: boolean;
@@ -19,15 +23,35 @@ interface SidebarProps {
 export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 	const location = useLocation();
 
+	// 2. Extraímos o usuário logado do contexto
+	const { user } = useAuth();
+
+	// 3. Adicionamos a propriedade opcional 'adminOnly' nos menus que precisam ser ocultados
 	const navItems = [
 		{ label: "Dashboard", path: "/", icon: LayoutDashboard },
 		{ label: "Ordens de Serviço", path: "/ordens", icon: ClipboardList },
 		{ label: "Clientes", path: "/clientes", icon: Users },
 		{ label: "Equipamentos", path: "/equipamentos", icon: Monitor },
+		{
+			label: "Checklists",
+			path: "/checklists",
+			icon: FileSignature,
+			adminOnly: true,
+		},
 		{ label: "Estoque", path: "/estoque", icon: Package },
 		{ label: "Usuários", path: "/usuarios", icon: UserCog },
 		{ label: "Configurações", path: "/configuracoes", icon: Settings },
 	];
+
+	// 4. Filtramos a lista de menus ANTES de renderizar na tela
+	const visibleNavItems = navItems.filter((item) => {
+		// Se o menu for exclusivo para admin, só retorna true se o role do usuário for ADMIN
+		if (item.adminOnly) {
+			return user?.role === "ADMIN";
+		}
+		// Se não tiver a flag, o menu é público (aparece para todos)
+		return true;
+	});
 
 	return (
 		<>
@@ -61,7 +85,8 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 				</div>
 
 				<nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-					{navItems.map((item) => {
+					{/* 5. Fazemos o .map() em cima da nossa lista filtrada (visibleNavItems) */}
+					{visibleNavItems.map((item) => {
 						const Icon = item.icon;
 						const isActive = location.pathname === item.path;
 
