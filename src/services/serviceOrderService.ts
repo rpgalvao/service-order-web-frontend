@@ -9,6 +9,22 @@ export interface CreateServiceOrderPayload {
     solution_description?: string;
 }
 
+export interface ChecklistAnswer {
+    id: string;
+    question_text: string;
+    order: number;
+    is_ok: boolean;
+    comment?: string | null;
+}
+
+export interface ServiceOrderChecklist {
+    id: string;
+    notes?: string | null;
+    started_at: string;
+    completed_at?: string | null;
+    answers: ChecklistAnswer[];
+}
+
 // Estrutura básica do retorno do Prisma para listagem
 export interface ServiceOrder {
     id: string;
@@ -28,6 +44,7 @@ export interface ServiceOrder {
     equipment?: { serial_number: string; model?: { name: string; }; };
     openedBy?: { name: string; };
     closedBy?: { name: string; };
+    checklist?: ServiceOrderChecklist | null;
 }
 
 export const serviceOrderService = {
@@ -60,6 +77,13 @@ export const serviceOrderService = {
     updateOrder: async (id: string, data: { status?: string; solution_description?: string; }): Promise<ServiceOrder> => {
         const response = await api.put(`/serviceorder/${id}`, data);
         return response.data.data;
+    },
+
+    updateChecklist: async (
+        id: string,
+        data: { notes?: string; answers: { id: string; is_ok: boolean; comment?: string; }[]; }
+    ): Promise<void> => {
+        await api.patch(`/serviceorder/${id}/checklist`, data);
     },
 
 };

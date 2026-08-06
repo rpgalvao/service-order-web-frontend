@@ -9,6 +9,7 @@ import { Customers } from "./pages/Customers";
 import { Equipments } from "./pages/Equipments";
 import { OrderDetails } from "./pages/OrderDetails";
 import { Checklists } from "./pages/Checklists";
+import { Inventory } from "./pages/Inventory";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // Componente que atua como "Leão de Chácara" das rotas
@@ -105,6 +106,16 @@ export default function App() {
 							<PrivateRoute>
 								<Layout>
 									<Checklists />
+								</Layout>
+							</PrivateRoute>
+						}
+					/>
+					<Route
+						path="/estoque"
+						element={
+							<PrivateRoute>
+								<Layout>
+									<Inventory />
 								</Layout>
 							</PrivateRoute>
 						}

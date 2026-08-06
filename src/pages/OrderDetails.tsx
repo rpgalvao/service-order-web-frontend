@@ -26,6 +26,11 @@ export function OrderDetails() {
 	const [error, setError] = useState("");
 	const [activeTab, setActiveTab] = useState<TabType>("VISAO_GERAL");
 
+	// Estados para o preenchimento do Checklist
+	const [checklistNotes, setChecklistNotes] = useState("");
+	const [checklistAnswers, setChecklistAnswers] = useState<any[]>([]);
+	const [isSavingChecklist, setIsSavingChecklist] = useState(false);
+
 	// Estados dos Modais
 	const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 	const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
@@ -36,6 +41,23 @@ export function OrderDetails() {
 		try {
 			const data = await serviceOrderService.getOrderById(id);
 			setOrder(data);
+
+			if (data.checklist) {
+				setChecklistNotes(data.checklist.notes || "");
+
+				// A SUA IDEIA AQUI: Verificamos se a O.S. já foi finalizada antes.
+				// Se sim, as perguntas já foram avaliadas (true). Se for nova, iniciam como não avaliadas (false).
+				const isCompleted = !!data.checklist.completed_at;
+
+				const mappedAnswers = (data.checklist.answers || []).map(
+					(ans: any) => ({
+						...ans,
+						is_evaluated: isCompleted,
+					}),
+				);
+
+				setChecklistAnswers(mappedAnswers);
+			}
 		} catch (err: any) {
 			console.error("Erro ao buscar detalhes:", err);
 			setError("Não foi possível carregar as informações.");
@@ -85,6 +107,66 @@ export function OrderDetails() {
 		} catch (err) {
 			alert("Erro ao reabrir a O.S.");
 		}
+	};
+
+	const handleSaveChecklist = async () => {
+		if (!id || !order?.checklist) return;
+
+		// 🛡️ TRAVA BASEADA NA SUA LÓGICA: Verifica se TODAS as respostas possuem is_evaluated === true
+		const allEvaluated = checklistAnswers.every((ans) => ans.is_evaluated);
+
+		if (!allEvaluated) {
+			alert(
+				"Atenção: Você precisa responder com 'OK' ou 'Com Problema' para TODAS as perguntas antes de salvar!",
+			);
+			return;
+		}
+
+		setIsSavingChecklist(true);
+
+		try {
+			const payload = {
+				notes: checklistNotes,
+				answers: checklistAnswers.map((ans) => ({
+					id: ans.id,
+					is_ok: ans.is_ok,
+					comment: ans.comment || undefined,
+				})),
+			};
+
+			await serviceOrderService.updateChecklist(id, payload);
+			alert("Checklist salvo com sucesso!");
+			await loadOrderDetails();
+		} catch (err: any) {
+			console.error(err);
+			const errorMessage =
+				err.response?.data?.message ||
+				"Erro ao salvar as respostas do checklist no servidor.";
+			alert(errorMessage);
+		} finally {
+			setIsSavingChecklist(false);
+		}
+	};
+
+	const updateAnswer = (
+		answerId: string,
+		field: "is_ok" | "comment",
+		value: any,
+	) => {
+		setChecklistAnswers((prev) =>
+			prev.map((ans) => {
+				if (ans.id === answerId) {
+					return {
+						...ans,
+						[field]: value,
+						// Se o clique foi no botão (is_ok), ativamos a avaliação daquele item
+						is_evaluated:
+							field === "is_ok" ? true : ans.is_evaluated,
+					};
+				}
+				return ans;
+			}),
+		);
 	};
 
 	// ----------------------------------------
@@ -342,8 +424,176 @@ export function OrderDetails() {
 					)}
 
 					{activeTab === "CHECKLIST" && (
-						<div className="text-center py-12 opacity-50">
-							Em construção...
+						<div className="space-y-6 text-dwl-blue dark:text-dwl-light animate-in fade-in max-w-4xl mx-auto">
+							{order.type === "CORRETIVA" ? (
+								<div className="text-center py-12 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border">
+									<CheckSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
+									<p className="font-medium">
+										O Checklist não se aplica a este
+										serviço.
+									</p>
+									<p className="text-sm opacity-70 mt-1">
+										Conforme as regras do sistema,
+										checklists são gerados apenas para
+										serviços do tipo Preventiva ou
+										Instalação.
+									</p>
+								</div>
+							) : !order.checklist ||
+							  checklistAnswers.length === 0 ? (
+								<div className="text-center py-12 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border">
+									<p className="font-medium">
+										Nenhum gabarito de checklist localizado.
+									</p>
+									<p className="text-sm opacity-70 mt-1">
+										O modelo deste equipamento pode não ter
+										um gabarito ativo no momento da abertura
+										da O.S.
+									</p>
+								</div>
+							) : (
+								<>
+									<div className="flex justify-between items-end border-b border-app-border pb-4">
+										<div>
+											<h3 className="font-bold text-lg">
+												Questionário de Análise
+											</h3>
+											<p className="text-sm opacity-70">
+												{order.checklist.completed_at
+													? `Finalizado em: ${new Date(order.checklist.completed_at).toLocaleString("pt-BR")}`
+													: "Preencha os itens abaixo durante a intervenção técnica."}
+											</p>
+										</div>
+									</div>
+
+									<div className="space-y-4">
+										{checklistAnswers.map((answer) => (
+											<div
+												key={answer.id}
+												className="p-4 bg-app-lightSurface dark:bg-app-darkSurface border border-app-border rounded-xl shadow-sm transition-colors focus-within:border-dwl-teal"
+											>
+												<div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between mb-3">
+													<div className="flex items-start gap-3 flex-1">
+														<span className="flex items-center justify-center w-6 h-6 rounded-full bg-black/5 dark:bg-white/10 text-xs font-bold shrink-0 mt-0.5">
+															{answer.order}
+														</span>
+														<p className="font-medium text-sm leading-relaxed">
+															{
+																answer.question_text
+															}
+														</p>
+													</div>
+
+													{/* Botões de Ação (OK / Defeito) */}
+													<div className="flex gap-2 shrink-0">
+														<button
+															onClick={() =>
+																updateAnswer(
+																	answer.id,
+																	"is_ok",
+																	true,
+																)
+															}
+															disabled={
+																order.status !==
+																"ABERTA"
+															}
+															className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+																answer.is_evaluated &&
+																answer.is_ok ===
+																	true
+																	? "bg-green-600 text-white border-green-600"
+																	: "bg-transparent text-dwl-blue/50 dark:text-dwl-grey border-app-border hover:bg-black/5 disabled:opacity-50"
+															}`}
+														>
+															OK
+														</button>
+														<button
+															onClick={() =>
+																updateAnswer(
+																	answer.id,
+																	"is_ok",
+																	false,
+																)
+															}
+															disabled={
+																order.status !==
+																"ABERTA"
+															}
+															className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+																answer.is_evaluated &&
+																answer.is_ok ===
+																	false
+																	? "bg-red-600 text-white border-red-600"
+																	: "bg-transparent text-dwl-blue/50 dark:text-dwl-grey border-app-border hover:bg-black/5 disabled:opacity-50"
+															}`}
+														>
+															Com Problema
+														</button>
+													</div>
+												</div>
+
+												{/* Campo de Observação Específica do Item */}
+												<div className="pl-9">
+													<input
+														type="text"
+														placeholder="Observações sobre este item (opcional)..."
+														value={
+															answer.comment || ""
+														}
+														onChange={(e) =>
+															updateAnswer(
+																answer.id,
+																"comment",
+																e.target.value,
+															)
+														}
+														disabled={
+															order.status !==
+															"ABERTA"
+														}
+														className="w-full text-sm px-3 py-1.5 border border-app-border rounded bg-transparent focus:ring-1 focus:ring-dwl-teal disabled:opacity-50"
+													/>
+												</div>
+											</div>
+										))}
+									</div>
+
+									{/* Campo de Notas Gerais do Checklist */}
+									<div className="mt-8">
+										<label className="block text-sm font-bold text-dwl-teal uppercase tracking-wider mb-2">
+											Observações Gerais do Checklist
+										</label>
+										<textarea
+											rows={4}
+											placeholder="Anote considerações finais sobre o equipamento como um todo..."
+											value={checklistNotes}
+											onChange={(e) =>
+												setChecklistNotes(
+													e.target.value,
+												)
+											}
+											disabled={order.status !== "ABERTA"}
+											className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-sm focus:ring-1 focus:ring-dwl-teal resize-none disabled:opacity-50"
+										/>
+									</div>
+
+									{/* Botão de Salvar (Apenas se a OS estiver aberta) */}
+									{order.status === "ABERTA" && (
+										<div className="flex justify-end pt-4">
+											<button
+												onClick={handleSaveChecklist}
+												disabled={isSavingChecklist}
+												className="px-6 py-2.5 bg-dwl-teal text-white rounded-lg text-sm font-medium hover:bg-dwl-teal/90 disabled:opacity-50 shadow-sm flex items-center gap-2"
+											>
+												{isSavingChecklist
+													? "Salvando..."
+													: "Salvar Respostas do Checklist"}
+											</button>
+										</div>
+									)}
+								</>
+							)}
 						</div>
 					)}
 					{activeTab === "PECAS" && (

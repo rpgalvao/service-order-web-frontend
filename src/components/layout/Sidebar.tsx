@@ -38,7 +38,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 			icon: FileSignature,
 			adminOnly: true,
 		},
-		{ label: "Estoque", path: "/estoque", icon: Package },
+		{ label: "Estoque", path: "/estoque", icon: Package, adminOnly: true },
 		{ label: "Usuários", path: "/usuarios", icon: UserCog },
 		{ label: "Configurações", path: "/configuracoes", icon: Settings },
 	];
