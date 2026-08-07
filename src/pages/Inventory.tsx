@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Package, Building2, ArrowRightLeft } from "lucide-react";
 import { Suppliers } from "./Suppliers"; // Importamos a página que criamos no passo anterior
-// import { Parts } from './Parts'; // Deixaremos comentado para o próximo passo
+import { Parts } from "./Parts"; // Deixaremos comentado para o próximo passo
 
 type TabType = "PECAS" | "FORNECEDORES" | "MOVIMENTACOES";
 
@@ -63,15 +63,7 @@ export function Inventory() {
 				<div className="flex-1 overflow-auto p-6 relative">
 					{activeTab === "PECAS" && (
 						<div className="flex flex-col items-center justify-center h-full text-dwl-blue/50 dark:text-dwl-grey py-12">
-							<Package className="w-16 h-16 mb-4 opacity-20" />
-							<p className="font-medium text-lg">
-								Catálogo de Peças em Construção
-							</p>
-							<p className="text-sm mt-2 max-w-md text-center">
-								Aqui você poderá cadastrar novas peças, definir
-								preços de custo/venda e vincular aos
-								fornecedores.
-							</p>
+							<Parts />
 						</div>
 					)}
 

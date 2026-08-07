@@ -1,6 +1,11 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { X, Building2, Save } from "lucide-react";
 import { supplierService, type Supplier } from "../../services/supplierService";
+import {
+	formatDocument,
+	formatPhone,
+	toTitleCase,
+} from "../../utils/formatters";
 
 interface SupplierDrawerProps {
 	isOpen: boolean;
@@ -47,7 +52,7 @@ export function SupplierDrawer({
 
 		// Transforma strings vazias em undefined para o Zod aceitar perfeitamente
 		const payload = {
-			name,
+			name: toTitleCase(name),
 			document: document || undefined,
 			email: email || undefined,
 			phone: phone || undefined,
@@ -129,7 +134,9 @@ export function SupplierDrawer({
 							<input
 								type="text"
 								value={document}
-								onChange={(e) => setDocument(e.target.value)}
+								onChange={(e) =>
+									setDocument(formatDocument(e.target.value))
+								} // <-- MÁSCARA AQUI
 								className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal"
 								placeholder="Opcional"
 							/>
@@ -155,7 +162,9 @@ export function SupplierDrawer({
 								<input
 									type="text"
 									value={phone}
-									onChange={(e) => setPhone(e.target.value)}
+									onChange={(e) =>
+										setPhone(formatPhone(e.target.value))
+									} // <-- MÁSCARA AQUI
 									className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal"
 									placeholder="Opcional"
 								/>

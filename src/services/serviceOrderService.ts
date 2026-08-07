@@ -45,6 +45,17 @@ export interface ServiceOrder {
     openedBy?: { name: string; };
     closedBy?: { name: string; };
     checklist?: ServiceOrderChecklist | null;
+
+    // Peças substituídas na execução do serviço
+    parts_replaced?: {
+        id: string;
+        quantity: number;
+        unit_price: string | number;
+        part: {
+            name: string;
+            sku?: string | null;
+        };
+    }[];
 }
 
 export const serviceOrderService = {
@@ -84,6 +95,10 @@ export const serviceOrderService = {
         data: { notes?: string; answers: { id: string; is_ok: boolean; comment?: string; }[]; }
     ): Promise<void> => {
         await api.patch(`/serviceorder/${id}/checklist`, data);
+    },
+
+    addPart: async (osId: string, partId: string, quantity: number): Promise<void> => {
+        await api.post(`/serviceorder/${osId}/parts`, { partId, quantity });
     },
 
 };

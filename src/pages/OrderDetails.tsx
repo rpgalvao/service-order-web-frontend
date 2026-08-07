@@ -14,6 +14,7 @@ import {
 } from "../services/serviceOrderService";
 import { CancelOrderModal } from "../components/ui/CancelOrderModal";
 import { FinishOrderModal } from "../components/ui/FinishOrderModal";
+import { partService, type Part } from "../services/partService";
 
 type TabType = "VISAO_GERAL" | "CHECKLIST" | "PECAS";
 
@@ -34,6 +35,12 @@ export function OrderDetails() {
 	// Estados dos Modais
 	const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 	const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
+
+	// Estados para a Aba de Peças
+	const [availableParts, setAvailableParts] = useState<Part[]>([]);
+	const [selectedPartId, setSelectedPartId] = useState("");
+	const [selectedQuantity, setSelectedQuantity] = useState(1);
+	const [isAddingPart, setIsAddingPart] = useState(false);
 
 	const loadOrderDetails = useCallback(async () => {
 		if (!id) return;
@@ -170,6 +177,38 @@ export function OrderDetails() {
 	};
 
 	// ----------------------------------------
+
+	// Carrega as peças ativas apenas quando a aba de Peças for acessada
+	useEffect(() => {
+		if (activeTab === "PECAS" && availableParts.length === 0) {
+			partService
+				.getParts(false)
+				.then(setAvailableParts)
+				.catch(console.error);
+		}
+	}, [activeTab, availableParts.length]);
+
+	const handleAddPart = async () => {
+		if (!id || !selectedPartId || selectedQuantity < 1) return;
+		setIsAddingPart(true);
+		try {
+			await serviceOrderService.addPart(
+				id,
+				selectedPartId,
+				selectedQuantity,
+			);
+			alert("Peça adicionada e estoque atualizado com sucesso!");
+			setSelectedPartId("");
+			setSelectedQuantity(1);
+			await loadOrderDetails(); // Recarrega a O.S. para mostrar a peça na lista
+		} catch (err: any) {
+			const msg =
+				err.response?.data?.message || "Erro ao adicionar peça.";
+			alert(msg);
+		} finally {
+			setIsAddingPart(false);
+		}
+	};
 
 	if (isLoading) {
 		return (
@@ -597,8 +636,183 @@ export function OrderDetails() {
 						</div>
 					)}
 					{activeTab === "PECAS" && (
-						<div className="text-center py-12 opacity-50">
-							Em construção...
+						<div className="space-y-6 text-dwl-blue dark:text-dwl-light animate-in fade-in max-w-4xl mx-auto">
+							{/* Formulário de Adição de Peças (Aparece apenas se O.S. estiver aberta) */}
+							{order.status === "ABERTA" && (
+								<div className="p-4 bg-app-lightSurface dark:bg-app-darkSurface border border-app-border rounded-xl shadow-sm mb-6">
+									<h3 className="text-sm font-bold text-dwl-teal mb-4 uppercase tracking-wider">
+										Aplicar Peça no Equipamento
+									</h3>
+									<div className="flex flex-col sm:flex-row gap-4 items-end">
+										<div className="flex-1 w-full">
+											<label className="block text-sm font-medium mb-1.5">
+												Buscar Peça no Catálogo
+											</label>
+											<select
+												value={selectedPartId}
+												onChange={(e) =>
+													setSelectedPartId(
+														e.target.value,
+													)
+												}
+												className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal [&>option]:bg-app-lightSurface dark:[&>option]:bg-app-darkSurface"
+											>
+												<option value="">
+													Selecione uma peça...
+												</option>
+												{availableParts.map((part) => (
+													<option
+														key={part.id}
+														value={part.id}
+														disabled={
+															part.current_stock <
+															1
+														}
+													>
+														{part.name} (Estoque:{" "}
+														{part.current_stock}) -
+														R${" "}
+														{Number(
+															part.sale_price,
+														).toFixed(2)}
+													</option>
+												))}
+											</select>
+										</div>
+										<div className="w-full sm:w-32">
+											<label className="block text-sm font-medium mb-1.5">
+												Quantidade
+											</label>
+											<input
+												type="number"
+												min="1"
+												value={selectedQuantity}
+												onChange={(e) =>
+													setSelectedQuantity(
+														Number(e.target.value),
+													)
+												}
+												className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal"
+											/>
+										</div>
+										<button
+											onClick={handleAddPart}
+											disabled={
+												!selectedPartId || isAddingPart
+											}
+											className="w-full sm:w-auto px-6 py-2 bg-dwl-teal text-white rounded-lg text-sm font-medium hover:bg-dwl-teal/90 disabled:opacity-50 transition-colors shadow-sm"
+										>
+											{isAddingPart
+												? "Salvando..."
+												: "Adicionar"}
+										</button>
+									</div>
+								</div>
+							)}
+
+							{/* Lista de Peças Já Utilizadas */}
+							<h3 className="font-bold text-lg mb-4">
+								Peças Aplicadas nesta O.S.
+							</h3>
+							<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm overflow-hidden">
+								<table className="w-full text-left border-collapse">
+									<thead>
+										<tr className="bg-black/5 dark:bg-white/5 border-b border-app-border">
+											<th className="px-6 py-4 text-sm font-semibold">
+												Peça / SKU
+											</th>
+											<th className="px-6 py-4 text-sm font-semibold text-center">
+												Quantidade
+											</th>
+											<th className="px-6 py-4 text-sm font-semibold text-right">
+												Valor Unit.
+											</th>
+											<th className="px-6 py-4 text-sm font-semibold text-right">
+												Subtotal
+											</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-app-border">
+										{!order.parts_replaced ||
+										order.parts_replaced.length === 0 ? (
+											<tr>
+												<td
+													colSpan={4}
+													className="px-6 py-8 text-center text-dwl-blue/50 dark:text-dwl-grey text-sm"
+												>
+													Nenhuma peça foi aplicada
+													nesta ordem de serviço até o
+													momento.
+												</td>
+											</tr>
+										) : (
+											order.parts_replaced.map((item) => (
+												<tr
+													key={item.id}
+													className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+												>
+													<td className="px-6 py-4">
+														<div className="font-medium text-sm">
+															{item.part.name}
+														</div>
+														<div className="text-xs opacity-70 mt-0.5">
+															SKU:{" "}
+															{item.part.sku ||
+																"N/A"}
+														</div>
+													</td>
+													<td className="px-6 py-4 text-sm text-center font-medium">
+														{item.quantity} un
+													</td>
+													<td className="px-6 py-4 text-sm text-right">
+														R${" "}
+														{Number(
+															item.unit_price,
+														).toFixed(2)}
+													</td>
+													<td className="px-6 py-4 text-sm font-bold text-dwl-teal text-right">
+														R${" "}
+														{(
+															item.quantity *
+															Number(
+																item.unit_price,
+															)
+														).toFixed(2)}
+													</td>
+												</tr>
+											))
+										)}
+									</tbody>
+									{/* Rodapé com Total (Opcional, se houver peças) */}
+									{order.parts_replaced &&
+										order.parts_replaced.length > 0 && (
+											<tfoot className="bg-black/5 dark:bg-white/5 border-t border-app-border">
+												<tr>
+													<td
+														colSpan={3}
+														className="px-6 py-4 text-sm font-bold text-right uppercase"
+													>
+														Custo Total em Peças:
+													</td>
+													<td className="px-6 py-4 text-lg font-bold text-dwl-teal text-right">
+														R${" "}
+														{order.parts_replaced
+															.reduce(
+																(acc, item) =>
+																	acc +
+																	item.quantity *
+																		Number(
+																			item.unit_price,
+																		),
+																0,
+															)
+															.toFixed(2)}
+													</td>
+												</tr>
+											</tfoot>
+										)}
+								</table>
+							</div>
 						</div>
 					)}
 				</div>
