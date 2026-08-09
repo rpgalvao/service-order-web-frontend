@@ -69,3 +69,18 @@ export const toTitleCase = (text: string): string => {
         })
         .join(' ');
 };
+
+/**
+ * Formata um valor numérico para o padrão de moeda brasileiro (BRL)
+ * Ex: 1500.5 -> "R$ 1.500,50"
+ */
+export const formatCurrency = (value: number | string): string => {
+    const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+
+    if (isNaN(numericValue)) return 'R$ 0,00';
+
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    }).format(numericValue);
+};

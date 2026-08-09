@@ -1,7 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Edit2, Trash2, AlertTriangle } from "lucide-react";
+import {
+	Plus,
+	Search,
+	Edit2,
+	Trash2,
+	AlertTriangle,
+	ArrowDownToLine,
+} from "lucide-react";
 import { partService, type Part } from "../services/partService";
 import { PartDrawer } from "../components/ui/PartDrawer";
+import { formatCurrency } from "../utils/formatters";
+import { StockEntryDrawer } from "../components/ui/StockEntryDrawer";
 
 export function Parts() {
 	const [parts, setParts] = useState<Part[]>([]);
@@ -11,6 +20,11 @@ export function Parts() {
 
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const [partToEdit, setPartToEdit] = useState<Part | null>(null);
+
+	const [isEntryDrawerOpen, setIsEntryDrawerOpen] = useState(false);
+	const [selectedPartForEntry, setSelectedPartForEntry] = useState<
+		string | null
+	>(null);
 
 	const loadParts = useCallback(async () => {
 		setIsLoading(true);
@@ -55,9 +69,10 @@ export function Parts() {
 	);
 
 	return (
-		// CORREÇÃO: Removido o 'h-full flex flex-col' e adicionado 'w-full min-w-0' para evitar que o conteúdo force a largura da tela
-		<div className="space-y-6 animate-in fade-in duration-500 w-full min-w-0">
-			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+		// CORREÇÃO 1: Adicionado flex, flex-col e h-full para a página ocupar 100% da altura da aba
+		<div className="flex flex-col h-full gap-6 animate-in fade-in duration-500 w-full min-w-0">
+			{/* CORREÇÃO 2: flex-none garante que o cabeçalho nunca seja espremido */}
+			<div className="flex-none flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 				<div className="w-full max-w-md relative">
 					<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 						<Search className="h-5 w-5 text-dwl-blue/50 dark:text-dwl-grey" />
@@ -89,28 +104,38 @@ export function Parts() {
 					>
 						<Plus className="w-5 h-5" /> Nova Peça
 					</button>
+					<button
+						onClick={() => {
+							setSelectedPartForEntry(null);
+							setIsEntryDrawerOpen(true);
+						}}
+						className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm flex-1 sm:flex-none justify-center"
+					>
+						<ArrowDownToLine className="w-5 h-5" /> Registrar Compra
+					</button>
 				</div>
 			</div>
 
-			{/* CORREÇÃO: Container simples, sem flex, para garantir que o overflow-x-auto funcione com a tabela */}
-			<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm w-full">
-				<div className="overflow-x-auto w-full">
+			{/* CORREÇÃO 3: flex-1 e min-h-0 dizem para esta caixa preencher o espaço restante, mas sem empurrar o cabeçalho para fora */}
+			<div className="flex-1 min-h-0 bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm w-full flex flex-col">
+				{/* CORREÇÃO 4: overflow-auto colocado apenas na div que abraça a tabela */}
+				<div className="flex-1 overflow-auto w-full">
 					<table className="w-full text-left border-collapse min-w-[900px]">
 						<thead>
 							<tr className="bg-black/5 dark:bg-white/5 border-b border-app-border">
-								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light">
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light sticky top-0 bg-app-lightSurface dark:bg-app-darkSurface z-10 shadow-[0_1px_0_var(--app-border)]">
 									Produto
 								</th>
-								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light">
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light sticky top-0 bg-app-lightSurface dark:bg-app-darkSurface z-10 shadow-[0_1px_0_var(--app-border)]">
 									Valores
 								</th>
-								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light">
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light sticky top-0 bg-app-lightSurface dark:bg-app-darkSurface z-10 shadow-[0_1px_0_var(--app-border)]">
 									Estoque
 								</th>
-								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light">
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light sticky top-0 bg-app-lightSurface dark:bg-app-darkSurface z-10 shadow-[0_1px_0_var(--app-border)]">
 									Fornecedor
 								</th>
-								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light text-right">
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light text-right sticky top-0 bg-app-lightSurface dark:bg-app-darkSurface z-10 shadow-[0_1px_0_var(--app-border)]">
 									Ações
 								</th>
 							</tr>
@@ -149,17 +174,18 @@ export function Parts() {
 											</div>
 										</td>
 										<td className="px-6 py-4 text-sm text-dwl-blue dark:text-dwl-light">
+											{/* APLICAÇÃO DO FORMATADOR DE MOEDA AQUI */}
 											<div>
-												Custo: R${" "}
-												{Number(
+												Custo:{" "}
+												{formatCurrency(
 													part.cost_price,
-												).toFixed(2)}
+												)}
 											</div>
 											<div className="font-medium text-dwl-teal">
-												Venda: R${" "}
-												{Number(
+												Venda:{" "}
+												{formatCurrency(
 													part.sale_price,
-												).toFixed(2)}
+												)}
 											</div>
 										</td>
 										<td className="px-6 py-4">
@@ -224,6 +250,13 @@ export function Parts() {
 				onClose={() => setIsDrawerOpen(false)}
 				onSuccess={loadParts}
 				partToEdit={partToEdit}
+			/>
+
+			<StockEntryDrawer
+				isOpen={isEntryDrawerOpen}
+				onClose={() => setIsEntryDrawerOpen(false)}
+				onSuccess={loadParts} // Recarrega a tabela automaticamente!
+				preSelectedPartId={selectedPartForEntry}
 			/>
 		</div>
 	);

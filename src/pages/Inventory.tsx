@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Package, Building2, ArrowRightLeft } from "lucide-react";
-import { Suppliers } from "./Suppliers"; // Importamos a página que criamos no passo anterior
-import { Parts } from "./Parts"; // Deixaremos comentado para o próximo passo
+import { Suppliers } from "./Suppliers";
+import { Parts } from "./Parts";
+import { StockMovements } from "./StockMovements";
 
 type TabType = "PECAS" | "FORNECEDORES" | "MOVIMENTACOES";
 
@@ -75,15 +76,8 @@ export function Inventory() {
 					)}
 
 					{activeTab === "MOVIMENTACOES" && (
-						<div className="flex flex-col items-center justify-center h-full text-dwl-blue/50 dark:text-dwl-grey py-12">
-							<ArrowRightLeft className="w-16 h-16 mb-4 opacity-20" />
-							<p className="font-medium text-lg">
-								Histórico de Movimentações
-							</p>
-							<p className="text-sm mt-2 max-w-md text-center">
-								Em breve, você verá aqui o rastro de auditoria
-								de cada peça que entrou ou saiu do estoque.
-							</p>
+						<div className="h-full animate-in fade-in duration-300">
+							<StockMovements />
 						</div>
 					)}
 				</div>
