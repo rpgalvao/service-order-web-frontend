@@ -1,35 +1,54 @@
 import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import type { RecentActivity } from "../../services/dashboardService";
 
-export function RecentActivities() {
-	const activities = [
-		{
-			id: 1,
-			title: "O.S. #1042 Finalizada",
-			description: "Equipamento Analisador Bioquímico entregue.",
-			time: "Há 10 min",
-			icon: CheckCircle2,
-			iconColor: "text-dwl-teal dark:text-dwl-cyan",
-			bgColor: "bg-dwl-teal/10 dark:bg-dwl-teal/20",
-		},
-		{
-			id: 2,
-			title: "Peça em Falta",
-			description: "Placa mãe do modelo X-200 atingiu estoque mínimo.",
-			time: "Há 2 horas",
-			icon: AlertCircle,
-			iconColor: "text-red-500",
-			bgColor: "bg-red-500/10 dark:bg-red-500/20",
-		},
-		{
-			id: 3,
-			title: "Nova O.S. Aberta (#1043)",
-			description: "Microscópio Óptico - Cliente: Lab. São Marcos.",
-			time: "Há 3 horas",
-			icon: Clock,
-			iconColor: "text-dwl-blue dark:text-dwl-light",
-			bgColor: "bg-dwl-blue/10 dark:bg-white/10",
-		},
-	];
+interface RecentActivitiesProps {
+	activities: RecentActivity[];
+}
+
+export function RecentActivities({ activities }: RecentActivitiesProps) {
+	// Função utilitária para transformar a data em "Há X minutos"
+	const timeAgo = (dateString: string) => {
+		const seconds = Math.floor(
+			(new Date().getTime() - new Date(dateString).getTime()) / 1000,
+		);
+		let interval = seconds / 31536000;
+		if (interval > 1) return `Há ${Math.floor(interval)} anos`;
+		interval = seconds / 2592000;
+		if (interval > 1) return `Há ${Math.floor(interval)} meses`;
+		interval = seconds / 86400;
+		if (interval > 1) return `Há ${Math.floor(interval)} dias`;
+		interval = seconds / 3600;
+		if (interval > 1) return `Há ${Math.floor(interval)} horas`;
+		interval = seconds / 60;
+		if (interval > 1) return `Há ${Math.floor(interval)} min`;
+		return "Agora mesmo";
+	};
+
+	const getStatusConfig = (status: string) => {
+		switch (status) {
+			case "FINALIZADA":
+				return {
+					icon: CheckCircle2,
+					title: "O.S. Finalizada",
+					color: "text-dwl-teal dark:text-dwl-cyan",
+					bg: "bg-dwl-teal/10 dark:bg-dwl-teal/20",
+				};
+			case "CANCELADA":
+				return {
+					icon: AlertCircle,
+					title: "O.S. Cancelada",
+					color: "text-red-500",
+					bg: "bg-red-500/10 dark:bg-red-500/20",
+				};
+			default:
+				return {
+					icon: Clock,
+					title: "O.S. Atualizada",
+					color: "text-dwl-blue dark:text-dwl-light",
+					bg: "bg-dwl-blue/10 dark:bg-white/10",
+				};
+		}
+	};
 
 	return (
 		<div className="bg-app-lightSurface dark:bg-app-darkSurface p-6 rounded-xl border border-app-border shadow-sm h-full transition-colors duration-300">
@@ -38,34 +57,43 @@ export function RecentActivities() {
 			</h3>
 
 			<div className="space-y-4">
-				{activities.map((activity) => {
-					const Icon = activity.icon;
-					return (
-						<div
-							key={activity.id}
-							className="flex items-start gap-4"
-						>
+				{activities.length === 0 ? (
+					<p className="text-sm text-dwl-blue/50 dark:text-dwl-grey text-center py-4">
+						Nenhuma atividade recente.
+					</p>
+				) : (
+					activities.map((activity) => {
+						const config = getStatusConfig(activity.status);
+						const Icon = config.icon;
+						return (
 							<div
-								className={`p-2 rounded-full mt-1 transition-colors duration-300 ${activity.bgColor}`}
+								key={activity.id}
+								className="flex items-start gap-4"
 							>
-								<Icon
-									className={`w-4 h-4 ${activity.iconColor}`}
-								/>
+								<div
+									className={`p-2 rounded-full mt-1 transition-colors duration-300 ${config.bg}`}
+								>
+									<Icon
+										className={`w-4 h-4 ${config.color}`}
+									/>
+								</div>
+								<div className="flex-1 min-w-0">
+									<h4 className="text-sm font-semibold text-dwl-blue dark:text-dwl-light transition-colors duration-300 truncate">
+										{config.title} (#{activity.number})
+									</h4>
+									<p className="text-xs text-dwl-blue/70 dark:text-dwl-grey mt-0.5 transition-colors duration-300 truncate">
+										{activity.equipment?.model.name ||
+											"Equipamento"}{" "}
+										- {activity.customer.name}
+									</p>
+								</div>
+								<span className="text-xs font-medium text-dwl-blue/50 dark:text-dwl-grey whitespace-nowrap transition-colors duration-300">
+									{timeAgo(activity.updated_at)}
+								</span>
 							</div>
-							<div className="flex-1">
-								<h4 className="text-sm font-semibold text-dwl-blue dark:text-dwl-light transition-colors duration-300">
-									{activity.title}
-								</h4>
-								<p className="text-xs text-dwl-blue/70 dark:text-dwl-grey mt-0.5 transition-colors duration-300">
-									{activity.description}
-								</p>
-							</div>
-							<span className="text-xs font-medium text-dwl-blue/50 dark:text-dwl-grey whitespace-nowrap transition-colors duration-300">
-								{activity.time}
-							</span>
-						</div>
-					);
-				})}
+						);
+					})
+				)}
 			</div>
 		</div>
 	);
