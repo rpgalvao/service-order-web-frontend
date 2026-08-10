@@ -11,6 +11,7 @@ import { OrderDetails } from "./pages/OrderDetails";
 import { Checklists } from "./pages/Checklists";
 import { Inventory } from "./pages/Inventory";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { Settings } from "./pages/Settings";
 
 // Componente que atua como "Leão de Chácara" das rotas
 function PrivateRoute({ children }: { children: ReactNode }) {
@@ -116,6 +117,16 @@ export default function App() {
 							<PrivateRoute>
 								<Layout>
 									<Inventory />
+								</Layout>
+							</PrivateRoute>
+						}
+					/>
+					<Route
+						path="/configuracoes"
+						element={
+							<PrivateRoute>
+								<Layout>
+									<Settings />
 								</Layout>
 							</PrivateRoute>
 						}

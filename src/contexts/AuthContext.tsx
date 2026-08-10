@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 interface UserPayload {
 	id: string;
 	name: string;
+	email: string;
 	role: "ADMIN" | "TECHNICIAN";
 }
 
