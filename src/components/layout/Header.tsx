@@ -10,6 +10,7 @@ import {
 	UserCog,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext"; // Ajuste o caminho se necessário
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
 	onOpenSidebar: () => void;
@@ -48,6 +49,8 @@ export function Header({ onOpenSidebar }: HeaderProps) {
 		document.documentElement.classList.toggle("dark");
 		setIsDarkMode(!isDarkMode);
 	};
+
+	const navigate = useNavigate();
 
 	return (
 		<header className="h-16 bg-app-lightSurface dark:bg-app-darkSurface border-b border-app-border flex-shrink-0 flex items-center justify-between px-4 sm:px-6 transition-colors duration-300">
@@ -96,9 +99,15 @@ export function Header({ onOpenSidebar }: HeaderProps) {
 						onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
 						className="flex items-center gap-2 hover:opacity-80 transition-opacity"
 					>
-						<div className="w-8 h-8 rounded-full bg-dwl-teal/20 flex items-center justify-center text-dwl-teal dark:text-dwl-cyan shrink-0">
-							{/* Mostra a inicial do nome ou o ícone padrão */}
-							{user?.name ? (
+						<div className="w-8 h-8 rounded-full bg-dwl-teal/20 flex items-center justify-center text-dwl-teal dark:text-dwl-cyan shrink-0 overflow-hidden border border-dwl-teal/30">
+							{/* 🟢 Verificação do Avatar */}
+							{user?.avatar_url ? (
+								<img
+									src={user.avatar_url}
+									alt={user.name}
+									className="w-full h-full object-cover"
+								/>
+							) : user?.name ? (
 								<span className="font-bold text-sm">
 									{user.name.charAt(0).toUpperCase()}
 								</span>
@@ -107,7 +116,6 @@ export function Header({ onOpenSidebar }: HeaderProps) {
 							)}
 						</div>
 						<span className="text-sm font-medium text-dwl-blue dark:text-dwl-light hidden sm:block">
-							{/* Mostra o nome real vindo do token */}
 							{user?.name || "Carregando..."}
 						</span>
 					</button>
@@ -126,11 +134,11 @@ export function Header({ onOpenSidebar }: HeaderProps) {
 								</p>
 							</div>
 
-							{/* Botão de Meu Perfil (deixaremos a rota preparada) */}
+							{/* Botão de Meu Perfil */}
 							<button
 								onClick={() => {
 									setIsProfileMenuOpen(false);
-									// TODO: Navegar para /perfil futuramente
+									navigate("/configuracoes"); // 🟢 Roteamento ativado!
 								}}
 								className="w-full flex items-center gap-2 px-4 py-2 text-sm text-dwl-blue dark:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
 							>

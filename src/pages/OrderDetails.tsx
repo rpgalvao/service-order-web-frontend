@@ -7,6 +7,7 @@ import {
 	Wrench,
 	AlertCircle,
 	RefreshCw,
+	Printer,
 } from "lucide-react";
 import {
 	serviceOrderService,
@@ -42,6 +43,9 @@ export function OrderDetails() {
 	const [selectedQuantity, setSelectedQuantity] = useState(1);
 	const [isAddingPart, setIsAddingPart] = useState(false);
 
+	// Estados para geração do PDF
+	const [isExportingPdf, setIsExportingPdf] = useState(false);
+
 	const loadOrderDetails = useCallback(async () => {
 		if (!id) return;
 		setIsLoading(true);
@@ -76,6 +80,31 @@ export function OrderDetails() {
 	useEffect(() => {
 		loadOrderDetails();
 	}, [loadOrderDetails]);
+
+	const handleExportPdf = async () => {
+		if (!id) return;
+		setIsExportingPdf(true);
+
+		try {
+			// Chama a função que criamos no serviço
+			const pdfUrl = await serviceOrderService.exportPdf(id);
+
+			if (pdfUrl) {
+				// Abre o PDF em uma nova aba do navegador
+				window.open(pdfUrl, "_blank");
+			} else {
+				alert("Não foi possível obter o link do documento.");
+			}
+		} catch (err: any) {
+			console.error(err);
+			const msg =
+				err.response?.data?.message ||
+				"Erro ao gerar o PDF da Ordem de Serviço.";
+			alert(msg);
+		} finally {
+			setIsExportingPdf(false);
+		}
+	};
 
 	// --- Funções do Ciclo de Vida da O.S. ---
 
@@ -271,6 +300,17 @@ export function OrderDetails() {
 
 				{/* Botões Dinâmicos do Ciclo de Vida */}
 				<div className="flex gap-2">
+					{/* 🟢 Botão de Gerar PDF (Sempre visível) */}
+					<button
+						onClick={handleExportPdf}
+						disabled={isExportingPdf}
+						className="flex items-center gap-2 px-4 py-2 border border-dwl-teal text-dwl-teal rounded-lg text-sm font-medium hover:bg-dwl-teal/10 disabled:opacity-50 transition-colors"
+						title="Imprimir Relatório"
+					>
+						<Printer className="w-4 h-4" />
+						{isExportingPdf ? "Gerando..." : "Gerar PDF"}
+					</button>
+
 					{order.status === "ABERTA" && (
 						<>
 							<button

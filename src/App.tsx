@@ -12,6 +12,7 @@ import { Checklists } from "./pages/Checklists";
 import { Inventory } from "./pages/Inventory";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Settings } from "./pages/Settings";
+import { ResetPassword } from "./pages/ResetPassword";
 
 // Componente que atua como "Leão de Chácara" das rotas
 function PrivateRoute({ children }: { children: ReactNode }) {
@@ -40,6 +41,10 @@ export default function App() {
 			<BrowserRouter>
 				<Routes>
 					<Route path="/login" element={<Login />} />
+					<Route
+						path="/redefinir-senha"
+						element={<ResetPassword />}
+					/>
 
 					<Route
 						path="/"

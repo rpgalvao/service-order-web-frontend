@@ -101,4 +101,9 @@ export const serviceOrderService = {
         await api.post(`/serviceorder/${osId}/parts`, { partId, quantity });
     },
 
+    exportPdf: async (id: string): Promise<string> => {
+        const response = await api.get(`/serviceorder/${id}/export/pdf`);
+        // Retorna exatamente a URL que o seu backend gerou
+        return response.data.data.pdf_url;
+    },
 };

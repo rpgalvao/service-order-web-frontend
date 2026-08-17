@@ -1,21 +1,20 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react"; // Ícone para voltar ao login
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import logoDwl from "../assets/logo_dwl.png";
 
 export function Login() {
-	// Estados do Login
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
 
-	// Estados da Recuperação de Senha
 	const [isRecovering, setIsRecovering] = useState(false);
 	const [recoveryEmail, setRecoveryEmail] = useState("");
 	const [recoveryMessage, setRecoveryMessage] = useState("");
+	const [isLoading, setIsLoading] = useState(false);
 
 	const { login } = useAuth();
 	const navigate = useNavigate();
@@ -23,35 +22,42 @@ export function Login() {
 	const handleLogin = async (e: FormEvent) => {
 		e.preventDefault();
 		setError("");
+		setIsLoading(true);
 
 		try {
 			const response = await api.post("/login", { email, password });
-			login(response.data.data.token);
+			login(response.data.data.token, response.data.data.user);
 			navigate("/");
 		} catch (err) {
 			setError("Credenciais inválidas. Tente novamente.");
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
 	const handleRecovery = async (e: FormEvent) => {
 		e.preventDefault();
 		setRecoveryMessage("");
+		setError("");
+		setIsLoading(true);
 
 		try {
-			// TODO: Descomentar e ajustar a rota quando o backend estiver pronto
-			// await api.post('/auth/forgot-password', { email: recoveryEmail });
+			// Chamada real para a sua rota de esqueci a senha
+			await api.post("/login/forgot-password", { email: recoveryEmail });
 
-			// Simulando o sucesso visualmente por enquanto:
 			setRecoveryMessage(
 				"Se o e-mail estiver cadastrado, você receberá um link de recuperação em breve.",
 			);
 			setRecoveryEmail("");
 		} catch (err) {
-			setError("Ocorreu um erro ao tentar recuperar a senha.");
+			setError(
+				"Ocorreu um erro ao tentar recuperar a senha. Verifique o e-mail digitado.",
+			);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
-	// Reseta as mensagens ao alternar entre as telas
 	const toggleMode = () => {
 		setIsRecovering(!isRecovering);
 		setError("");
@@ -69,7 +75,6 @@ export function Login() {
 					/>
 				</div>
 
-				{/* --- TELA DE RECUPERAÇÃO DE SENHA --- */}
 				{isRecovering ? (
 					<div className="animate-in fade-in slide-in-from-right-4 duration-300">
 						<h2 className="text-2xl font-bold text-center text-dwl-blue dark:text-dwl-light mb-2 transition-colors">
@@ -83,6 +88,12 @@ export function Login() {
 						{recoveryMessage && (
 							<div className="bg-dwl-teal/10 border border-dwl-teal/20 text-dwl-teal dark:text-dwl-cyan text-sm p-3 rounded-lg mb-4 text-center">
 								{recoveryMessage}
+							</div>
+						)}
+
+						{error && (
+							<div className="bg-red-500/10 border border-red-500/20 text-red-600 text-sm p-3 rounded-lg mb-4 text-center transition-colors">
+								{error}
 							</div>
 						)}
 
@@ -105,9 +116,14 @@ export function Login() {
 
 							<button
 								type="submit"
-								className="w-full bg-dwl-teal hover:bg-dwl-teal/90 text-white font-medium py-2.5 rounded-lg transition-colors mt-2 shadow-sm"
+								disabled={isLoading}
+								className="w-full bg-dwl-teal hover:bg-dwl-teal/90 disabled:opacity-70 text-white font-medium py-2.5 rounded-lg transition-colors mt-2 shadow-sm flex justify-center items-center gap-2"
 							>
-								Enviar link de recuperação
+								{isLoading ? (
+									<Loader2 className="w-5 h-5 animate-spin" />
+								) : (
+									"Enviar link de recuperação"
+								)}
 							</button>
 
 							<button
@@ -121,7 +137,6 @@ export function Login() {
 						</form>
 					</div>
 				) : (
-					/* --- TELA DE LOGIN PRINCIPAL --- */
 					<div className="animate-in fade-in slide-in-from-left-4 duration-300">
 						<h2 className="text-2xl font-bold text-center text-dwl-blue dark:text-dwl-light mb-6 transition-colors">
 							Acesso ao Sistema
@@ -151,7 +166,6 @@ export function Login() {
 									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light transition-colors">
 										Senha
 									</label>
-									{/* Link para abrir a recuperação de senha */}
 									<button
 										type="button"
 										onClick={toggleMode}
@@ -173,9 +187,14 @@ export function Login() {
 							</div>
 							<button
 								type="submit"
-								className="w-full bg-dwl-teal hover:bg-dwl-teal/90 text-white font-medium py-2.5 rounded-lg transition-colors mt-2 shadow-sm"
+								disabled={isLoading}
+								className="w-full bg-dwl-teal hover:bg-dwl-teal/90 disabled:opacity-70 text-white font-medium py-2.5 rounded-lg transition-colors mt-2 shadow-sm flex justify-center items-center gap-2"
 							>
-								Entrar
+								{isLoading ? (
+									<Loader2 className="w-5 h-5 animate-spin" />
+								) : (
+									"Entrar"
+								)}
 							</button>
 						</form>
 					</div>
