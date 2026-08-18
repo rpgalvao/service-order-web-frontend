@@ -7,6 +7,7 @@ export interface CreateServiceOrderPayload {
     type: 'INSTALACAO' | 'PREVENTIVA' | 'CORRETIVA';
     problem_description: string;
     solution_description?: string;
+    client_signature?: string;
 }
 
 export interface ChecklistAnswer {
@@ -38,6 +39,8 @@ export interface ServiceOrder {
     closed_at?: string | null;
     cancellation_reason?: string | null;
     solution_description?: string | null;
+    technical_notes?: string;
+    client_signature?: string;
 
     // Relacionamentos que o Prisma geralmente traz com o "include"
     customer?: { name: string; };
@@ -85,7 +88,12 @@ export const serviceOrderService = {
         return response.data.data;
     },
 
-    updateOrder: async (id: string, data: { status?: string; solution_description?: string; }): Promise<ServiceOrder> => {
+    updateOrder: async (id: string, data: {
+        status?: string;
+        solution_description?: string;
+        technical_notes?: string;
+        client_signature?: string;
+    }): Promise<ServiceOrder> => {
         const response = await api.put(`/serviceorder/${id}`, data);
         return response.data.data;
     },
@@ -105,5 +113,11 @@ export const serviceOrderService = {
         const response = await api.get(`/serviceorder/${id}/export/pdf`);
         // Retorna exatamente a URL que o seu backend gerou
         return response.data.data.pdf_url;
+    },
+
+    // Adicione essa função junto com as outras no objeto do serviceOrderService
+    saveClientSignature: async (id: string, signatureBase64: string) => {
+        const response = await api.patch(`/serviceorder/${id}/signature`, { signatureBase64 });
+        return response.data;
     },
 };

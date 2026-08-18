@@ -6,10 +6,13 @@ export interface Customer {
     name: string;
     email?: string | null;
     phone?: string | null;
-    zip_code?: string | null;
+    zipcode?: string | null;
     city: string;
     state: string;
     address?: string | null;
+    number?: string | null;
+    complement?: string | null;
+    neighborhood?: string | null;
     active: boolean;
     created_at: string;
 }
@@ -23,6 +26,9 @@ export interface CreateCustomerPayload {
     zipcode?: string; // Atenção aqui: o seu Zod espera "zipcode" sem underline
     address?: string;
     phone?: string;
+    number?: string | null;
+    complement?: string | null;
+    neighborhood?: string | null;
 }
 
 export const customerService = {

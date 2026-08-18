@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from "react";
-import { X, MapPin, Building2, Phone } from "lucide-react";
+import { useState, useRef, type FormEvent } from "react";
+import { X, MapPin, Building2 } from "lucide-react";
 import { customerService } from "../../services/customerService";
-import { formatPhone } from "../../utils/formatters";
+import { formatPhone, formatCEP, toTitleCase } from "../../utils/formatters";
 
 interface NewCustomerDrawerProps {
 	isOpen: boolean;
@@ -17,13 +17,49 @@ export function NewCustomerDrawer({
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [phone, setPhone] = useState("");
-	const [city, setCity] = useState("");
-	const [state, setState] = useState(""); // UF (Ex: PR, SP)
+
+	// Estados de Endereço
 	const [zipcode, setZipcode] = useState("");
 	const [address, setAddress] = useState("");
+	const [number, setNumber] = useState("");
+	const [complement, setComplement] = useState("");
+	const [neighborhood, setNeighborhood] = useState("");
+	const [city, setCity] = useState("");
+	const [state, setState] = useState("");
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
+
+	// 🟢 Criamos a referência para o campo de número
+	const numberInputRef = useRef<HTMLInputElement>(null);
+
+	// Função que busca o CEP
+	const fetchAddressByCep = async (cepText: string) => {
+		const cleanCep = cepText.replace(/\D/g, "");
+
+		if (cleanCep.length === 8) {
+			try {
+				const response = await fetch(
+					`https://viacep.com.br/ws/${cleanCep}/json/`,
+				);
+				const data = await response.json();
+
+				if (!data.erro) {
+					setCity(toTitleCase(data.localidade));
+					setState(data.uf);
+					setAddress(toTitleCase(data.logradouro));
+					setNeighborhood(toTitleCase(data.bairro));
+
+					// 🟢 Coloca o cursor piscando no campo "Número"
+					setTimeout(() => {
+						numberInputRef.current?.focus();
+					}, 100);
+				}
+			} catch (error) {
+				console.error("Erro ao buscar CEP:", error);
+			}
+		}
+	};
 
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
@@ -32,23 +68,30 @@ export function NewCustomerDrawer({
 
 		try {
 			await customerService.createCustomer({
-				name,
-				city,
-				state: state.toUpperCase(),
-				email: email || undefined,
+				name: toTitleCase(name),
+				email: email.toLowerCase() || undefined,
 				phone: phone || undefined,
 				zipcode: zipcode || undefined,
-				address: address || undefined,
+				city: toTitleCase(city),
+				state: state.toUpperCase(),
+				address: toTitleCase(address) || undefined,
+				// 🟢 Enviando os novos campos para a API
+				number: number || undefined,
+				complement: toTitleCase(complement) || undefined,
+				neighborhood: toTitleCase(neighborhood) || undefined,
 			});
 
-			// Limpa os campos
+			// Limpa todos os campos
 			setName("");
 			setEmail("");
 			setPhone("");
-			setCity("");
-			setState("");
 			setZipcode("");
 			setAddress("");
+			setNumber("");
+			setComplement("");
+			setNeighborhood("");
+			setCity("");
+			setState("");
 
 			onSuccess();
 			onClose();
@@ -75,7 +118,7 @@ export function NewCustomerDrawer({
 			/>
 
 			<div
-				className={`fixed top-0 right-0 h-full w-full max-w-md bg-app-lightSurface dark:bg-app-darkSurface shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-app-border flex flex-col ${
+				className={`fixed top-0 right-0 h-full w-full max-w-lg bg-app-lightSurface dark:bg-app-darkSurface shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-app-border flex flex-col ${
 					isOpen ? "translate-x-0" : "translate-x-full"
 				}`}
 			>
@@ -165,13 +208,98 @@ export function NewCustomerDrawer({
 							</div>
 						</div>
 
-						{/* Seção: Endereço */}
+						{/* Seção: Endereço (Agora 100% Organizado em Grid) */}
 						<div className="space-y-4 pt-2">
 							<div className="flex items-center gap-2 text-dwl-teal font-medium mb-2 border-b border-app-border pb-2">
 								<MapPin className="w-4 h-4" />
 								<span className="text-sm">Endereço</span>
 							</div>
 
+							{/* Linha 1: CEP e Logradouro */}
+							<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+								<div className="sm:col-span-1">
+									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
+										CEP
+									</label>
+									<input
+										type="text"
+										value={zipcode}
+										onChange={(e) => {
+											const masked = formatCEP(
+												e.target.value,
+											);
+											setZipcode(masked);
+											if (masked.length === 9) {
+												fetchAddressByCep(masked);
+											}
+										}}
+										placeholder="00000-000"
+										className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent focus:ring-1 focus:ring-dwl-teal"
+									/>
+								</div>
+								<div className="sm:col-span-2">
+									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
+										Logradouro / Rua
+									</label>
+									<input
+										type="text"
+										value={address}
+										onChange={(e) =>
+											setAddress(e.target.value)
+										}
+										placeholder="Ex: Rua das Flores"
+										className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal transition-colors"
+									/>
+								</div>
+							</div>
+
+							{/* Linha 2: Número, Complemento e Bairro */}
+							<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+								<div>
+									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
+										Número
+									</label>
+									<input
+										type="text"
+										ref={numberInputRef} // 🟢 Conectando o useRef aqui!
+										value={number}
+										onChange={(e) =>
+											setNumber(e.target.value)
+										}
+										placeholder="Ex: 123"
+										className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent focus:ring-1 focus:ring-dwl-teal"
+									/>
+								</div>
+								<div>
+									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
+										Complemento
+									</label>
+									<input
+										type="text"
+										value={complement}
+										onChange={(e) =>
+											setComplement(e.target.value)
+										}
+										placeholder="Ex: Sala 4"
+										className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent focus:ring-1 focus:ring-dwl-teal"
+									/>
+								</div>
+								<div>
+									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
+										Bairro
+									</label>
+									<input
+										type="text"
+										value={neighborhood}
+										onChange={(e) =>
+											setNeighborhood(e.target.value)
+										}
+										className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent focus:ring-1 focus:ring-dwl-teal"
+									/>
+								</div>
+							</div>
+
+							{/* Linha 3: Cidade e UF */}
 							<div className="grid grid-cols-3 gap-4">
 								<div className="col-span-2">
 									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
@@ -205,37 +333,6 @@ export function NewCustomerDrawer({
 										}
 										placeholder="Ex: PR"
 										className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal transition-colors uppercase"
-									/>
-								</div>
-							</div>
-
-							<div className="grid grid-cols-3 gap-4">
-								<div>
-									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
-										CEP
-									</label>
-									<input
-										type="text"
-										value={zipcode}
-										onChange={(e) =>
-											setZipcode(e.target.value)
-										}
-										placeholder="00000-000"
-										className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal transition-colors"
-									/>
-								</div>
-								<div className="col-span-2">
-									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
-										Endereço Completo
-									</label>
-									<input
-										type="text"
-										value={address}
-										onChange={(e) =>
-											setAddress(e.target.value)
-										}
-										placeholder="Rua, número, bairro..."
-										className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal transition-colors"
 									/>
 								</div>
 							</div>

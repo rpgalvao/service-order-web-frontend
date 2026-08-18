@@ -119,12 +119,18 @@ export function OrderDetails() {
 		}
 	};
 
-	const handleFinishOrder = async (solution: string) => {
+	const handleFinishOrder = async (
+		solution: string,
+		technicalNotes: string,
+		signatureBase64: string,
+	) => {
 		if (!id) return;
 		try {
 			await serviceOrderService.updateOrder(id, {
 				status: "FINALIZADA",
 				solution_description: solution,
+				technical_notes: technicalNotes,
+				client_signature: signatureBase64, // 🟢 A mágica acontece aqui!
 			});
 			setIsFinishModalOpen(false);
 			loadOrderDetails();
@@ -499,6 +505,36 @@ export function OrderDetails() {
 										</p>
 									</div>
 								)}
+
+							{/* 🟢 NOVO: Observações Técnicas (Caixa Amarela) */}
+							{order.status === "FINALIZADA" &&
+								order.technical_notes && (
+									<div className="p-4 bg-amber-500/10 rounded-xl border border-amber-500/20 mt-4">
+										<h3 className="text-xs font-bold text-amber-700 dark:text-amber-500 mb-3 uppercase tracking-wider">
+											Observações Técnicas (Mal uso,
+											Infraestrutura, etc)
+										</h3>
+										<p className="text-sm leading-relaxed text-amber-900 dark:text-amber-200">
+											{order.technical_notes}
+										</p>
+									</div>
+								)}
+
+							{/* 🟢 NOVO: Exibição da Assinatura Coletada */}
+							{order.client_signature && (
+								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border mt-4">
+									<h3 className="text-xs font-bold text-dwl-teal mb-3 uppercase tracking-wider">
+										Assinatura do Cliente
+									</h3>
+									<div className="bg-white p-2 rounded border border-gray-200 inline-block">
+										<img
+											src={order.client_signature}
+											alt="Assinatura do Cliente"
+											className="h-24 object-contain filter contrast-125 grayscale"
+										/>
+									</div>
+								</div>
+							)}
 						</div>
 					)}
 

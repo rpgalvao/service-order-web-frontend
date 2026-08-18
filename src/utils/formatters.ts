@@ -84,3 +84,12 @@ export const formatCurrency = (value: number | string): string => {
         currency: 'BRL'
     }).format(numericValue);
 };
+
+/**
+ * Aplica máscara de CEP (00000-000)
+ */
+export const formatCEP = (value: string): string => {
+    if (!value) return '';
+    const numbers = value.replace(/\D/g, '');
+    return numbers.replace(/^(\d{5})(\d)/, '$1-$2').slice(0, 9);
+};
