@@ -8,6 +8,7 @@ import {
 	AlertCircle,
 	RefreshCw,
 	Printer,
+	MessageCircle,
 } from "lucide-react";
 import {
 	serviceOrderService,
@@ -16,6 +17,7 @@ import {
 import { CancelOrderModal } from "../components/ui/CancelOrderModal";
 import { FinishOrderModal } from "../components/ui/FinishOrderModal";
 import { partService, type Part } from "../services/partService";
+import { SendWhatsAppModal } from "../components/ui/SendWhatsAppModal";
 
 type TabType = "VISAO_GERAL" | "CHECKLIST" | "PECAS";
 
@@ -36,6 +38,7 @@ export function OrderDetails() {
 	// Estados dos Modais
 	const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 	const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
+	const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
 
 	// Estados para a Aba de Peças
 	const [availableParts, setAvailableParts] = useState<Part[]>([]);
@@ -106,6 +109,36 @@ export function OrderDetails() {
 		}
 	};
 
+	const handleSendWhatsApp = async (customPhone: string) => {
+		if (!order || !id) return;
+
+		// Limpa o telefone digitado e adiciona o DDI do Brasil (55)
+		const cleanPhone = customPhone.replace(/\D/g, "");
+		const whatsappNumber =
+			cleanPhone.length >= 10 ? `55${cleanPhone}` : cleanPhone;
+
+		setIsExportingPdf(true); // Usa o estado do PDF para o visual de "carregando"
+
+		try {
+			// 1. Gera o PDF e pega a URL
+			const pdfUrl = await serviceOrderService.exportPdf(id);
+
+			// 2. Monta a mensagem (sempre profissional)
+			const message = `Olá, ${order.customer?.name}!\n\nAqui é da *DWL Diagnóstica*.\nA Ordem de Serviço *#${String(order.number).padStart(4, "0")}* referente ao equipamento *${order.equipment?.model?.name || "N/A"}* encontra-se com o status: *${order.status}*.\n\nVocê pode baixar o relatório técnico completo acessando o link abaixo:\n🔗 ${pdfUrl}\n\nQualquer dúvida, estamos à disposição!`;
+
+			const encodedMessage = encodeURIComponent(message);
+			const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
+			// 3. Abre em uma nova aba
+			window.open(whatsappUrl, "_blank");
+		} catch (err: any) {
+			console.error(err);
+			alert("Erro ao preparar o documento para o WhatsApp.");
+		} finally {
+			setIsExportingPdf(false);
+		}
+	};
+
 	// --- Funções do Ciclo de Vida da O.S. ---
 
 	const handleCancelOrder = async (reason: string) => {
@@ -123,6 +156,7 @@ export function OrderDetails() {
 		solution: string,
 		technicalNotes: string,
 		signatureBase64: string,
+		signerName: string,
 	) => {
 		if (!id) return;
 		try {
@@ -130,7 +164,8 @@ export function OrderDetails() {
 				status: "FINALIZADA",
 				solution_description: solution,
 				technical_notes: technicalNotes,
-				client_signature: signatureBase64, // 🟢 A mágica acontece aqui!
+				client_signature: signatureBase64,
+				signer_name: signerName,
 			});
 			setIsFinishModalOpen(false);
 			loadOrderDetails();
@@ -306,6 +341,17 @@ export function OrderDetails() {
 
 				{/* Botões Dinâmicos do Ciclo de Vida */}
 				<div className="flex gap-2">
+					{/* 🟢 Botão do WhatsApp (Pintado de verde) */}
+					<button
+						onClick={() => setIsWhatsAppModalOpen(true)} // 🟢 Agora ele abre o modal!
+						disabled={isExportingPdf}
+						className="flex items-center gap-2 px-4 py-2 border border-green-500/50 text-green-600 dark:text-green-400 bg-green-50/50 dark:bg-green-500/10 rounded-lg text-sm font-medium hover:bg-green-100 dark:hover:bg-green-500/20 disabled:opacity-50 transition-colors shadow-sm"
+						title="Enviar por WhatsApp"
+					>
+						<MessageCircle className="w-4 h-4" />
+						WhatsApp
+					</button>
+
 					{/* 🟢 Botão de Gerar PDF (Sempre visível) */}
 					<button
 						onClick={handleExportPdf}
@@ -904,6 +950,13 @@ export function OrderDetails() {
 				isOpen={isFinishModalOpen}
 				onClose={() => setIsFinishModalOpen(false)}
 				onConfirm={handleFinishOrder}
+			/>
+
+			<SendWhatsAppModal
+				isOpen={isWhatsAppModalOpen}
+				onClose={() => setIsWhatsAppModalOpen(false)}
+				defaultPhone={order.customer?.phone}
+				onConfirm={handleSendWhatsApp}
 			/>
 		</div>
 	);

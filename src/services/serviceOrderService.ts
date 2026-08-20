@@ -41,9 +41,10 @@ export interface ServiceOrder {
     solution_description?: string | null;
     technical_notes?: string;
     client_signature?: string;
+    signer_name?: string;
 
     // Relacionamentos que o Prisma geralmente traz com o "include"
-    customer?: { name: string; };
+    customer?: { name: string; phone?: string | null; };
     equipment?: { serial_number: string; model?: { name: string; }; };
     openedBy?: { name: string; };
     closedBy?: { name: string; };
@@ -93,6 +94,7 @@ export const serviceOrderService = {
         solution_description?: string;
         technical_notes?: string;
         client_signature?: string;
+        signer_name?: string;
     }): Promise<ServiceOrder> => {
         const response = await api.put(`/serviceorder/${id}`, data);
         return response.data.data;
