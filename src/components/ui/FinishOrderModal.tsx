@@ -160,7 +160,7 @@ export function FinishOrderModal({
 									onChange={(e) =>
 										setSignerName(e.target.value)
 									}
-									placeholder="Ex: João Adroaldo (Gerente)"
+									placeholder="Ex: João Doe"
 									className="w-full px-3 py-2 border border-app-border rounded-lg bg-white dark:bg-app-darkSurface text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal"
 								/>
 							</div>
