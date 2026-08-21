@@ -1,75 +1,52 @@
-# React + TypeScript + Vite
+# 💻 @rpg Sistemas - Tech Support Web Portal (v2.0)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este é o portal web do sistema de gestão de assistência técnica da **@rpg Sistemas**. Uma aplicação Frontend (Single Page Application) moderna, responsiva e focada na melhor experiência de uso (UX) para técnicos e administradores.
 
-Currently, two official plugins are available:
+A versão 2.0 traz uma interface completamente remodelada, suporte a dashboards interativos, captura de assinatura digital nativa no navegador e atalhos de comunicação direta via WhatsApp.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Tecnologias Utilizadas
 
-## React Compiler
+O projeto foi construído com ferramentas de ponta para garantir performance e manutenibilidade:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React & Vite:** Renderização ultra-rápida e ambiente de desenvolvimento otimizado[cite: 7].
+- **TypeScript:** Tipagem estática para um código mais seguro e previsível[cite: 7].
+- **Tailwind CSS:** Estilização utilitária para uma interface moderna, responsiva e com suporte nativo a Dark Mode[cite: 7].
+- **Lucide React:** Biblioteca de ícones elegantes e consistentes[cite: 7].
+- **Axios & JWT Decode:** Comunicação assíncrona segura com a API e decodificação local de tokens de acesso[cite: 7].
+- **Recharts:** Renderização de gráficos e dashboards gerenciais[cite: 7].
+- **React Signature Canvas:** Captura em tempo real da assinatura física do cliente em dispositivos touch/mouse[cite: 7].
 
-## Expanding the ESLint configuration
+## ⚙️ Funcionalidades e Telas Principais
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Dashboard Gerencial:** Visão geral da operação com gráficos de status e métricas em tempo real.
+- **Painel de O.S. (Kanban/Lista):** Gestão visual das Ordens de Serviço, filtragem por status e histórico de manutenções.
+- **Workflow de Fechamento de O.S.:**
+    - Modal inteligente para preenchimento de solução aplicada.
+    - **Canvas de Assinatura:** Coleta da assinatura do responsável direto na tela.
+    - **Botão WhatsApp:** Geração instantânea de mensagens com o link do Laudo em PDF.
+- **Gestão de Cadastros:** Telas otimizadas para CRUD de Clientes, Usuários (RBAC) e Equipamentos.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠️ Como Rodar o Projeto (Local)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1. Clone o repositório e acesse a pasta do frontend.
+2. Instale as dependências do projeto:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+3. Crie um arquivo .env na raiz do projeto configurando a URL da API (exemplo):
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+VITE_API_URL=http://localhost:3333
 ```
+
+4. Inicie o servidor de desenvolvimento:
+
+```bash
+npm run dev
+```
+
+5. Acesse no seu navegador o endereço padrão (geralmente http://localhost:5173)
+
+### Desenvolvido com ☕ e foco por @rpg Sistemas.
