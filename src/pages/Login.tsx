@@ -1,134 +1,204 @@
 import { useState } from "react";
-import logoDwl from "../assets/logo_dwl.png";
-import { api } from "../services/api"; // Importamos a nossa central!
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { api } from "../lib/api";
+import { useAuth } from "../contexts/AuthContext";
+import logoDwl from "../assets/logo_dwl.png";
 
-export default function Login() {
-	const navigate = useNavigate();
+export function Login() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [error, setError] = useState("");
 
-	// Novos estados para controlar o botão e mensagens de erro
-	const [loading, setLoading] = useState(false);
-	const [errorMessage, setErrorMessage] = useState("");
+	const [isRecovering, setIsRecovering] = useState(false);
+	const [recoveryEmail, setRecoveryEmail] = useState("");
+	const [recoveryMessage, setRecoveryMessage] = useState("");
+	const [isLoading, setIsLoading] = useState(false);
 
-	// A função que faz a mágica acontecer
-	const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault(); // Impede o HTML de recarregar a página (comportamento padrão de forms)
-		setErrorMessage(""); // Limpa erros anteriores
-		setLoading(true); // Avisa que começou a carregar
+	const { login } = useAuth();
+	const navigate = useNavigate();
+
+	const handleLogin = async (e: FormEvent) => {
+		e.preventDefault();
+		setError("");
+		setIsLoading(true);
 
 		try {
-			// Faz o POST para a rota de login do seu backend
-			// (Atenção: verifique se a sua rota é '/login', '/auth' ou '/technicians/login')
-			const response = await api.post("/login", {
-				email,
-				password,
-			});
-
-			console.log("Resposta da API:", response.data);
-			const token = response.data.token || response.data.data?.token;
-			const user = response.data.user || response.data.data?.user;
-			if (token) {
-				// Salva no navegador
-				localStorage.setItem("@dwl:token", token);
-				localStorage.setItem("@dwl:user", JSON.stringify(user));
-				// O motorista leva o usuário para a rota do painel!
-				navigate("/dashboard");
-			} else {
-				setErrorMessage(
-					"Login efetuado, mas o Token não foi encontrado na resposta.",
-				);
-			}
-		} catch (error: any) {
-			console.error("Erro na requisição:", error);
-			// Pega a mensagem de erro bonita que criamos no nosso AppError do backend
-			if (error.response?.data?.message) {
-				setErrorMessage(error.response.data.message);
-			} else {
-				setErrorMessage(
-					"Não foi possível conectar ao servidor. O backend está respirando?",
-				);
-			}
+			const response = await api.post("/login", { email, password });
+			login(response.data.data.token, response.data.data.user);
+			navigate("/");
+		} catch (err) {
+			setError("Credenciais inválidas. Tente novamente.");
 		} finally {
-			setLoading(false); // Termina de carregar, dando certo ou errado
+			setIsLoading(false);
 		}
 	};
 
+	const handleRecovery = async (e: FormEvent) => {
+		e.preventDefault();
+		setRecoveryMessage("");
+		setError("");
+		setIsLoading(true);
+
+		try {
+			// Chamada real para a sua rota de esqueci a senha
+			await api.post("/login/forgot-password", { email: recoveryEmail });
+
+			setRecoveryMessage(
+				"Se o e-mail estiver cadastrado, você receberá um link de recuperação em breve.",
+			);
+			setRecoveryEmail("");
+		} catch (err) {
+			setError(
+				"Ocorreu um erro ao tentar recuperar a senha. Verifique o e-mail digitado.",
+			);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const toggleMode = () => {
+		setIsRecovering(!isRecovering);
+		setError("");
+		setRecoveryMessage("");
+	};
+
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-dwl-bg p-4">
-			<div className="w-full max-w-md rounded-2xl bg-white p-10 shadow-lg border border-dwl-border/40">
-				<div className="mb-10 flex flex-col items-center">
+		<div className="min-h-screen bg-app-background flex items-center justify-center p-4 transition-colors duration-300">
+			<div className="max-w-md w-full bg-app-lightSurface dark:bg-app-darkSurface rounded-2xl shadow-xl border border-app-border p-8 transition-all duration-300">
+				<div className="flex justify-center mb-8">
 					<img
 						src={logoDwl}
-						alt="DWL Tech Support Logo"
-						className="mb-6 h-20 w-auto object-contain"
+						alt="DWL Diagnóstica"
+						className="h-16 w-auto transition-all duration-300 dark:drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]"
 					/>
-					<h2 className="text-3xl font-extrabold text-dwl-teal">
-						Tech Support
-					</h2>
-					<p className="text-sm mt-1 font-medium text-dwl-border">
-						Painel do Técnico
-					</p>
 				</div>
 
-				{/* Mudamos de uma <div> genérica para um <form> real, 
-            e amarramos o onSubmit na nossa função! */}
-				<form onSubmit={handleLogin} className="space-y-6">
-					{/* Mostra a mensagem de erro em vermelho da DWL se der problema */}
-					{errorMessage && (
-						<div className="rounded-lg bg-dwl-red/10 p-3 text-sm text-dwl-red border border-dwl-red/20 text-center font-medium">
-							{errorMessage}
-						</div>
-					)}
+				{isRecovering ? (
+					<div className="animate-in fade-in slide-in-from-right-4 duration-300">
+						<h2 className="text-2xl font-bold text-center text-dwl-blue dark:text-dwl-light mb-2 transition-colors">
+							Recuperar Senha
+						</h2>
+						<p className="text-sm text-center text-dwl-blue/70 dark:text-dwl-grey mb-6 transition-colors">
+							Digite seu e-mail para receber as instruções de
+							redefinição.
+						</p>
 
-					<div>
-						<label className="mb-2 block text-sm font-semibold text-slate-700">
-							E-mail
-						</label>
-						<input
-							type="email"
-							required
-							placeholder="tecnico@dwldiagnostica.com"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							className="w-full rounded-lg border border-dwl-border/50 bg-white p-3.5 text-slate-900 placeholder-slate-400 focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue transition"
-						/>
-					</div>
+						{recoveryMessage && (
+							<div className="bg-dwl-teal/10 border border-dwl-teal/20 text-dwl-teal dark:text-dwl-cyan text-sm p-3 rounded-lg mb-4 text-center">
+								{recoveryMessage}
+							</div>
+						)}
 
-					<div>
-						<div className="flex items-center justify-between mb-2">
-							<label className="block text-sm font-semibold text-slate-700">
-								Senha
-							</label>
-							{/* 
-							<a
-								href="#"
-								className="text-xs font-medium text-dwl-blue hover:text-dwl-teal transition"
+						{error && (
+							<div className="bg-red-500/10 border border-red-500/20 text-red-600 text-sm p-3 rounded-lg mb-4 text-center transition-colors">
+								{error}
+							</div>
+						)}
+
+						<form onSubmit={handleRecovery} className="space-y-4">
+							<div>
+								<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1 transition-colors">
+									E-mail
+								</label>
+								<input
+									type="email"
+									required
+									value={recoveryEmail}
+									onChange={(e) =>
+										setRecoveryEmail(e.target.value)
+									}
+									placeholder="Seu e-mail cadastrado"
+									className="w-full px-4 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal outline-none transition-colors"
+								/>
+							</div>
+
+							<button
+								type="submit"
+								disabled={isLoading}
+								className="w-full bg-dwl-teal hover:bg-dwl-teal/90 disabled:opacity-70 text-white font-medium py-2.5 rounded-lg transition-colors mt-2 shadow-sm flex justify-center items-center gap-2"
 							>
-								Esqueceu a senha?
-							</a>
-							*/}
-						</div>
-						<input
-							type="password"
-							required
-							placeholder="••••••••"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							className="w-full rounded-lg border border-dwl-border/50 bg-white p-3.5 text-slate-900 placeholder-slate-400 focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue transition"
-						/>
-					</div>
+								{isLoading ? (
+									<Loader2 className="w-5 h-5 animate-spin" />
+								) : (
+									"Enviar link de recuperação"
+								)}
+							</button>
 
-					{/* O botão muda de tipo para 'submit' e desabilita enquanto carrega */}
-					<button
-						type="submit"
-						disabled={loading}
-						className="w-full rounded-lg bg-dwl-blue p-3.5 text-center font-bold text-white transition-all hover:bg-dwl-teal focus:outline-none focus:ring-2 focus:ring-dwl-blue focus:ring-offset-2 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
-					>
-						{loading ? "Acessando..." : "Acessar Sistema"}
-					</button>
-				</form>
+							<button
+								type="button"
+								onClick={toggleMode}
+								className="w-full flex items-center justify-center gap-2 text-sm text-dwl-blue/70 dark:text-dwl-grey hover:text-dwl-teal dark:hover:text-dwl-cyan transition-colors mt-4"
+							>
+								<ArrowLeft className="w-4 h-4" />
+								Voltar para o login
+							</button>
+						</form>
+					</div>
+				) : (
+					<div className="animate-in fade-in slide-in-from-left-4 duration-300">
+						<h2 className="text-2xl font-bold text-center text-dwl-blue dark:text-dwl-light mb-6 transition-colors">
+							Acesso ao Sistema
+						</h2>
+
+						{error && (
+							<div className="bg-red-500/10 border border-red-500/20 text-red-600 text-sm p-3 rounded-lg mb-4 text-center transition-colors">
+								{error}
+							</div>
+						)}
+
+						<form onSubmit={handleLogin} className="space-y-4">
+							<div>
+								<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1 transition-colors">
+									E-mail
+								</label>
+								<input
+									type="email"
+									required
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									className="w-full px-4 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal outline-none transition-colors"
+								/>
+							</div>
+							<div>
+								<div className="flex items-center justify-between mb-1">
+									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light transition-colors">
+										Senha
+									</label>
+									<button
+										type="button"
+										onClick={toggleMode}
+										tabIndex={-1}
+										className="text-xs font-medium text-dwl-teal dark:text-dwl-cyan hover:underline transition-all"
+									>
+										Esqueceu a senha?
+									</button>
+								</div>
+								<input
+									type="password"
+									required
+									value={password}
+									onChange={(e) =>
+										setPassword(e.target.value)
+									}
+									className="w-full px-4 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal outline-none transition-colors"
+								/>
+							</div>
+							<button
+								type="submit"
+								disabled={isLoading}
+								className="w-full bg-dwl-teal hover:bg-dwl-teal/90 disabled:opacity-70 text-white font-medium py-2.5 rounded-lg transition-colors mt-2 shadow-sm flex justify-center items-center gap-2"
+							>
+								{isLoading ? (
+									<Loader2 className="w-5 h-5 animate-spin" />
+								) : (
+									"Entrar"
+								)}
+							</button>
+						</form>
+					</div>
+				)}
 			</div>
 		</div>
 	);

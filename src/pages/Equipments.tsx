@@ -1,176 +1,200 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { api } from "../services/api";
-import {
-	ArrowLeft,
-	PlusCircle,
-	Search,
-	Edit,
-	MonitorSmartphone,
-} from "lucide-react";
-import toast from "react-hot-toast";
-import logoDwl from "../assets/logo_dwl.png";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Search, Monitor, Cpu, Building2 } from "lucide-react";
+import { equipmentService, type Equipment } from "../services/equipmentService";
+import { useAuth } from "../contexts/AuthContext";
+import { NewEquipmentModelDrawer } from "../components/ui/NewEquipmentModelDrawer";
+import { NewEquipmentDrawer } from "../components/ui/NewEquipmentDrawer";
 
-export default function Equipments() {
-	const navigate = useNavigate();
+export function Equipments() {
+	const [equipments, setEquipments] = useState<Equipment[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [searchTerm, setSearchTerm] = useState("");
 
-	const [equipments, setEquipments] = useState<any[]>([]);
-	const [search, setSearch] = useState("");
-	const [loading, setLoading] = useState(true);
+	// Estados para as duas gavetas
+	const [isModelDrawerOpen, setIsModelDrawerOpen] = useState(false);
+	const [isEquipmentDrawerOpen, setIsEquipmentDrawerOpen] = useState(false);
 
-	useEffect(() => {
-		document.title = "Equipamentos | DWL Tech Support";
+	const { user } = useAuth();
+	const isAdmin = user?.role === "ADMIN";
 
-		async function loadEquipments() {
-			try {
-				// Busca a lista lá no seu equipment.controller.ts
-				const response = await api.get("/equipment");
-				if (response.data.success) {
-					setEquipments(response.data.data);
-				}
-			} catch (error) {
-				console.error("Erro ao carregar equipamentos:", error);
-				toast.error("Erro ao carregar a lista de equipamentos.");
-			} finally {
-				setLoading(false);
-			}
+	const loadEquipments = useCallback(async () => {
+		setIsLoading(true);
+		try {
+			const data = await equipmentService.getEquipments();
+			setEquipments(data);
+		} catch (error) {
+			console.error("Erro ao buscar equipamentos:", error);
+		} finally {
+			setIsLoading(false);
 		}
-
-		loadEquipments();
 	}, []);
 
-	// Filtro inteligente: busca pela descrição do aparelho ou pelo Número de Série
-	const filteredEquipments = equipments.filter((eq) => {
-		const searchLower = search.toLowerCase();
-		const desc = eq.description?.toLowerCase() || "";
-		const serial = eq.serial_number?.toLowerCase() || "";
-		return desc.includes(searchLower) || serial.includes(searchLower);
-	});
+	useEffect(() => {
+		loadEquipments();
+	}, [loadEquipments]);
+
+	// Filtra pelo S/N ou pelo nome do cliente/modelo
+	const filteredEquipments = equipments.filter(
+		(eq) =>
+			eq.serial_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			(eq.model?.name &&
+				eq.model.name
+					.toLowerCase()
+					.includes(searchTerm.toLowerCase())) ||
+			(eq.customer?.name &&
+				eq.customer.name
+					.toLowerCase()
+					.includes(searchTerm.toLowerCase())),
+	);
 
 	return (
-		<div className="flex min-h-screen flex-col bg-dwl-bg">
-			{/* HEADER */}
-			<header className="flex h-16 items-center justify-between bg-white border-b border-dwl-border/30 px-4 sm:px-6 shadow-sm">
-				<div className="flex items-center gap-3 sm:gap-4">
-					<img
-						src={logoDwl}
-						alt="DWL Logo"
-						className="h-7 sm:h-8 w-auto opacity-90"
-					/>
-					<div className="h-6 w-px bg-slate-200" />
-					<button
-						onClick={() => navigate("/dashboard")}
-						className="flex items-center gap-1.5 font-semibold text-slate-500 transition-colors hover:text-dwl-blue"
-					>
-						<ArrowLeft size={20} className="mt-0.5" />
-						<span className="text-sm sm:text-base">Painel</span>
-					</button>
+		<div className="flex flex-col h-full animate-in fade-in duration-300">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+				<div>
+					<h1 className="text-2xl font-bold text-dwl-blue dark:text-dwl-light transition-colors">
+						Central de Equipamentos
+					</h1>
+					<p className="text-sm text-dwl-blue/70 dark:text-dwl-grey mt-1 transition-colors">
+						Gerencie o parque de máquinas, números de série e
+						catálogo de modelos.
+					</p>
 				</div>
-				<h1 className="flex items-center gap-2 text-sm sm:text-lg font-extrabold text-dwl-teal truncate">
-					<MonitorSmartphone size={20} />
-					Meus Equipamentos
-				</h1>
-			</header>
 
-			<main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-8">
-				{/* BARRA DE AÇÕES */}
-				<div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-					<div className="relative w-full sm:max-w-md">
-						<input
-							type="text"
-							placeholder="Buscar por descrição ou S/N..."
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							className="w-full rounded-lg border border-dwl-border/50 bg-white p-3 pl-10 text-sm focus:border-dwl-blue focus:outline-none focus:ring-1 focus:ring-dwl-blue shadow-sm"
-						/>
-						<Search
-							className="absolute left-3 top-3 text-slate-400"
-							size={18}
-						/>
-					</div>
+				<div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+					{/* Botão de Novo Modelo: Restrito a Administradores */}
+					{isAdmin && (
+						<button
+							onClick={() => setIsModelDrawerOpen(true)}
+							className="flex items-center gap-2 px-4 py-2 bg-app-lightSurface dark:bg-app-darkSurface border border-app-border hover:bg-black/5 dark:hover:bg-white/5 text-dwl-blue dark:text-dwl-light rounded-lg text-sm font-medium transition-colors w-full sm:w-auto justify-center"
+						>
+							<Cpu className="w-5 h-5" />
+							Novo Modelo
+						</button>
+					)}
 
+					{/* Botão de Novo Equipamento: Aberto a todos */}
 					<button
-						onClick={() => navigate("/equipamentos/novo")}
-						className="flex items-center justify-center gap-2 rounded-lg bg-dwl-blue px-6 py-3 font-bold text-white transition-all hover:bg-dwl-teal active:scale-95 shadow-sm whitespace-nowrap"
+						onClick={() => setIsEquipmentDrawerOpen(true)}
+						className="flex items-center gap-2 px-4 py-2 bg-dwl-teal hover:bg-dwl-teal/90 text-white rounded-lg text-sm font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
 					>
-						<PlusCircle size={20} />
+						<Plus className="w-5 h-5" />
 						Novo Equipamento
 					</button>
 				</div>
+			</div>
 
-				{/* TABELA DE EQUIPAMENTOS */}
-				<div className="bg-white rounded-xl border border-dwl-border/30 shadow-sm overflow-hidden">
-					{loading ? (
-						<div className="py-12 text-center font-bold text-dwl-blue animate-pulse">
-							Carregando parque de máquinas...
-						</div>
-					) : (
-						<div className="overflow-x-auto">
-							<table className="w-full text-left text-sm text-slate-600 min-w-[800px]">
-								<thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-xs">
-									<tr>
-										<th className="px-6 py-4">
-											Equipamento
-										</th>
-										<th className="px-6 py-4">
-											Número de Série
-										</th>
-										<th className="px-6 py-4">
-											Cliente (Dono)
-										</th>
-										<th className="px-6 py-4 text-center">
-											Ações
-										</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-dwl-border/30">
-									{filteredEquipments.length === 0 ? (
-										<tr>
-											<td
-												colSpan={4}
-												className="px-6 py-8 text-center text-slate-500 italic"
-											>
-												Nenhum equipamento encontrado.
-											</td>
-										</tr>
-									) : (
-										filteredEquipments.map((eq) => (
-											<tr
-												key={eq.id}
-												className="hover:bg-slate-50 transition-colors"
-											>
-												<td className="px-6 py-4 font-bold text-slate-800">
-													{eq.description}
-												</td>
-												<td className="px-6 py-4 font-mono text-dwl-blue">
-													{eq.serial_number}
-												</td>
-												<td className="px-6 py-4">
-													{eq.customer?.name ||
-														"Sem vínculo"}
-												</td>
-												<td className="px-6 py-4 text-center">
-													<button
-														onClick={() =>
-															navigate(
-																`/equipamentos/editar/${eq.id}`,
-															)
-														}
-														className="p-2 text-slate-400 hover:text-dwl-teal transition-colors rounded-lg hover:bg-slate-100 inline-flex"
-														title="Editar Equipamento"
-													>
-														<Edit size={18} />
-													</button>
-												</td>
-											</tr>
-										))
-									)}
-								</tbody>
-							</table>
-						</div>
-					)}
+			{/* Tabela Principal */}
+			<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm flex flex-col flex-1 overflow-hidden transition-colors duration-300">
+				<div className="p-4 border-b border-app-border">
+					<div className="relative max-w-md">
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dwl-blue/40 dark:text-dwl-grey" />
+						<input
+							type="text"
+							placeholder="Buscar por S/N, modelo ou cliente..."
+							value={searchTerm}
+							onChange={(e) => setSearchTerm(e.target.value)}
+							className="w-full pl-10 pr-4 py-2 border border-app-border rounded-lg bg-black/5 dark:bg-white/5 text-dwl-blue dark:text-dwl-light focus:outline-none focus:ring-1 focus:ring-dwl-teal transition-all"
+						/>
+					</div>
 				</div>
-			</main>
+
+				<div className="flex-1 overflow-auto">
+					<table className="w-full text-left border-collapse min-w-[800px]">
+						<thead>
+							<tr className="border-b border-app-border bg-black/5 dark:bg-white/5 transition-colors">
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light">
+									Equipamento (S/N)
+								</th>
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light">
+									Cliente
+								</th>
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light">
+									Modelo Base
+								</th>
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light text-center">
+									Status Atual
+								</th>
+							</tr>
+						</thead>
+						<tbody className="divide-y divide-app-border">
+							{isLoading ? (
+								<tr>
+									<td
+										colSpan={4}
+										className="px-6 py-12 text-center text-dwl-blue/50 dark:text-dwl-grey"
+									>
+										Carregando equipamentos...
+									</td>
+								</tr>
+							) : filteredEquipments.length === 0 ? (
+								<tr>
+									<td
+										colSpan={4}
+										className="px-6 py-12 text-center text-dwl-blue/50 dark:text-dwl-grey"
+									>
+										Nenhum equipamento físico encontrado.
+									</td>
+								</tr>
+							) : (
+								filteredEquipments.map((eq) => (
+									<tr
+										key={eq.id}
+										className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
+									>
+										<td className="px-6 py-4">
+											<div className="flex items-center gap-3">
+												<div className="w-10 h-10 rounded-lg bg-dwl-teal/10 flex items-center justify-center text-dwl-teal">
+													<Monitor className="w-5 h-5" />
+												</div>
+												<p className="text-sm font-bold text-dwl-blue dark:text-dwl-light">
+													{eq.serial_number}
+												</p>
+											</div>
+										</td>
+										<td className="px-6 py-4">
+											{eq.customer ? (
+												<div className="flex items-center gap-2 text-sm text-dwl-blue/80 dark:text-dwl-light">
+													<Building2 className="w-4 h-4 text-dwl-blue/50 dark:text-dwl-grey" />
+													{eq.customer.name}
+												</div>
+											) : (
+												<span className="text-sm text-dwl-blue/40 dark:text-dwl-grey italic">
+													Estoque Interno
+												</span>
+											)}
+										</td>
+										<td className="px-6 py-4">
+											<div className="flex items-center gap-2 text-sm text-dwl-blue/80 dark:text-dwl-light">
+												<Cpu className="w-4 h-4 text-dwl-blue/50 dark:text-dwl-grey" />
+												{eq.model?.name ||
+													"Modelo Desconhecido"}
+											</div>
+										</td>
+										<td className="px-6 py-4 text-center">
+											<span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-black/5 dark:bg-white/5 border-app-border text-dwl-blue dark:text-dwl-light">
+												{eq.status.replace("_", " ")}
+											</span>
+										</td>
+									</tr>
+								))
+							)}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			{/* Gavetas de Cadastro */}
+			<NewEquipmentModelDrawer
+				isOpen={isModelDrawerOpen}
+				onClose={() => setIsModelDrawerOpen(false)}
+				onSuccess={loadEquipments} // Recarrega se precisar
+			/>
+
+			<NewEquipmentDrawer
+				isOpen={isEquipmentDrawerOpen}
+				onClose={() => setIsEquipmentDrawerOpen(false)}
+				onSuccess={loadEquipments}
+			/>
 		</div>
 	);
 }

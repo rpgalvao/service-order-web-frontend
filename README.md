@@ -1,62 +1,52 @@
-# 🛠️ DWL Tech Support - Frontend MVP
+# 💻 @rpg Sistemas - Tech Support Web Portal (v2.0)
 
-> Interface web para gestão de assistência técnica e controle de Ordens de Serviço (O.S.), desenvolvida exclusivamente para a **DWL Diagnóstica**.
+Este é o portal web do sistema de gestão de assistência técnica da **@rpg Sistemas**. Uma aplicação Frontend (Single Page Application) moderna, responsiva e focada na melhor experiência de uso (UX) para técnicos e administradores.
 
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
-
-## 📌 Sobre o Projeto
-
-Este é o frontend (Minimum Viable Product) do sistema de gerenciamento de assistência técnica da DWL Diagnóstica. Ele oferece um painel de controle ágil e responsivo para que os técnicos possam gerenciar o ciclo de vida completo de uma Ordem de Serviço, desde a entrada do equipamento até a emissão do laudo técnico em PDF.
-
-## ✨ Funcionalidades
-
-- 📊 **Dashboard Gerencial:** Visão 360º com métricas em tempo real de O.S. Pendentes, Concluídas e Canceladas.
-- 👥 **Gestão de Clientes:** Cadastro e edição de perfis de clientes, com visualização da "garagem" de equipamentos atrelados a cada perfil.
-- 💻 **Controle de Equipamentos:** Registro detalhado de máquinas, números de série e status atual na bancada.
-- ⚙️ **Workflow de Ordem de Serviço:**
-    - Abertura detalhada com relato do cliente.
-    - Mudança de status inteligente (ABERTA, FINALIZADA, CANCELADA).
-    - Tratamento de justificativas obrigatórias para cancelamentos.
-- 🖨️ **Gerador Nativo de PDF:** Criação de laudos/recibos profissionais diretamente no navegador, sem dependência de bibliotecas externas, prontos para impressão ou envio por WhatsApp.
+A versão 2.0 traz uma interface completamente remodelada, suporte a dashboards interativos, captura de assinatura digital nativa no navegador e atalhos de comunicação direta via WhatsApp.
 
 ## 🚀 Tecnologias Utilizadas
 
-- **[React](https://reactjs.org/)** - Biblioteca principal para construção da interface.
-- **[TypeScript](https://www.typescriptlang.org/)** - Tipagem estática para maior segurança e escalabilidade.
-- **[Tailwind CSS](https://tailwindcss.com/)** - Estilização utilitária e responsiva.
-- **[React Router](https://reactrouter.com/)** - Roteamento dinâmico da aplicação (Single Page Application).
-- **[Lucide React](https://lucide.dev/)** - Biblioteca de ícones moderna e limpa.
+O projeto foi construído com ferramentas de ponta para garantir performance e manutenibilidade:
 
-## 📦 Como rodar o projeto localmente
+- **React & Vite:** Renderização ultra-rápida e ambiente de desenvolvimento otimizado[cite: 7].
+- **TypeScript:** Tipagem estática para um código mais seguro e previsível[cite: 7].
+- **Tailwind CSS:** Estilização utilitária para uma interface moderna, responsiva e com suporte nativo a Dark Mode[cite: 7].
+- **Lucide React:** Biblioteca de ícones elegantes e consistentes[cite: 7].
+- **Axios & JWT Decode:** Comunicação assíncrona segura com a API e decodificação local de tokens de acesso[cite: 7].
+- **Recharts:** Renderização de gráficos e dashboards gerenciais[cite: 7].
+- **React Signature Canvas:** Captura em tempo real da assinatura física do cliente em dispositivos touch/mouse[cite: 7].
 
-1. Clone este repositório:
+## ⚙️ Funcionalidades e Telas Principais
+
+- **Dashboard Gerencial:** Visão geral da operação com gráficos de status e métricas em tempo real.
+- **Painel de O.S. (Kanban/Lista):** Gestão visual das Ordens de Serviço, filtragem por status e histórico de manutenções.
+- **Workflow de Fechamento de O.S.:**
+    - Modal inteligente para preenchimento de solução aplicada.
+    - **Canvas de Assinatura:** Coleta da assinatura do responsável direto na tela.
+    - **Botão WhatsApp:** Geração instantânea de mensagens com o link do Laudo em PDF.
+- **Gestão de Cadastros:** Telas otimizadas para CRUD de Clientes, Usuários (RBAC) e Equipamentos.
+
+## 🛠️ Como Rodar o Projeto (Local)
+
+1. Clone o repositório e acesse a pasta do frontend.
+2. Instale as dependências do projeto:
 
 ```bash
-   git clone [https://github.com/seu-usuario/nome-do-repo.git](https://github.com/seu-usuario/nome-do-repo.git)
+npm install
 ```
 
-2. Clone este repositório:
-
-```bash
-   cd nome-do-repo
-```
-
-3. Instale as dependências:
-
-```bash
-  npm install
-```
-
-4. Crie um arquivo .env na raiz do projeto e configure a URL da sua API (Backend):
+3. Crie um arquivo .env na raiz do projeto configurando a URL da API (exemplo):
 
 ```bash
 VITE_API_URL=http://localhost:3333
 ```
 
-5. Inicie o servidor de desenvolvimento:
+4. Inicie o servidor de desenvolvimento:
 
 ```bash
 npm run dev
 ```
+
+5. Acesse no seu navegador o endereço padrão (geralmente http://localhost:5173)
+
+### Desenvolvido com ☕ e foco por @rpg Sistemas.

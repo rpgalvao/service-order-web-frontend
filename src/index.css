@@ -1,10 +1,11 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-	--color-dwl-teal: #1296b0;
-	--color-dwl-blue: #1e5378;
-	--color-dwl-red: #8d0e0a;
-	/* Novas cores da Designer */
-	--color-dwl-bg: #f7f7f7;
-	--color-dwl-border: #747d88;
+@layer base {
+	body {
+		/* Por padrão aplica o tema claro. Se a classe 'dark' existir, aplica as cores escuras. 
+       O transition-colors cria um efeito de fade suave na troca. */
+		@apply bg-app-lightBg text-dwl-blue dark:bg-app-darkBg dark:text-dwl-light transition-colors duration-300;
+	}
 }
