@@ -1,14 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, MapPin, Building2, Mail } from "lucide-react";
+import { Plus, Search, MapPin, Building2, Mail, Edit2 } from "lucide-react";
 import { customerService, type Customer } from "../services/customerService";
 import { formatPhone } from "../utils/formatters";
-import { NewCustomerDrawer } from "../components/ui/NewCustomerDrawer";
+import { CustomerDrawer } from "../components/ui/CustomerDrawer";
 
 export function Customers() {
 	const [customers, setCustomers] = useState<Customer[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
+
+	// Novos estados de controle da gaveta
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+	const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
 
 	const loadCustomers = useCallback(async () => {
 		setIsLoading(true);
@@ -26,7 +29,6 @@ export function Customers() {
 		loadCustomers();
 	}, [loadCustomers]);
 
-	// Filtro local pelo nome ou e-mail do cliente
 	const filteredCustomers = customers.filter(
 		(customer) =>
 			customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -35,6 +37,18 @@ export function Customers() {
 					.toLowerCase()
 					.includes(searchTerm.toLowerCase())),
 	);
+
+	// Função que prepara o ambiente para um NOVO cliente
+	const handleNewCustomer = () => {
+		setCustomerToEdit(null);
+		setIsDrawerOpen(true);
+	};
+
+	// Função que prepara o ambiente para EDITAR um cliente
+	const handleEditCustomer = (customer: Customer) => {
+		setCustomerToEdit(customer);
+		setIsDrawerOpen(true);
+	};
 
 	return (
 		<div className="flex flex-col h-full animate-in fade-in duration-300">
@@ -49,7 +63,7 @@ export function Customers() {
 				</div>
 
 				<button
-					onClick={() => setIsDrawerOpen(true)}
+					onClick={handleNewCustomer}
 					className="flex items-center gap-2 px-4 py-2 bg-dwl-teal hover:bg-dwl-teal/90 text-white rounded-lg text-sm font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
 				>
 					<Plus className="w-5 h-5" />
@@ -58,7 +72,6 @@ export function Customers() {
 			</div>
 
 			<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm flex flex-col flex-1 overflow-hidden transition-colors duration-300">
-				{/* Barra de Pesquisa */}
 				<div className="p-4 border-b border-app-border">
 					<div className="relative max-w-md">
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dwl-blue/40 dark:text-dwl-grey" />
@@ -72,7 +85,6 @@ export function Customers() {
 					</div>
 				</div>
 
-				{/* Tabela */}
 				<div className="flex-1 overflow-auto">
 					<table className="w-full text-left border-collapse min-w-[800px]">
 						<thead>
@@ -89,13 +101,16 @@ export function Customers() {
 								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light text-center">
 									Status
 								</th>
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light text-center">
+									Ações
+								</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-app-border">
 							{isLoading ? (
 								<tr>
 									<td
-										colSpan={4}
+										colSpan={5}
 										className="px-6 py-12 text-center"
 									>
 										<div className="flex flex-col items-center justify-center text-dwl-blue/50 dark:text-dwl-grey">
@@ -107,7 +122,7 @@ export function Customers() {
 							) : filteredCustomers.length === 0 ? (
 								<tr>
 									<td
-										colSpan={4}
+										colSpan={5}
 										className="px-6 py-12 text-center text-dwl-blue/50 dark:text-dwl-grey"
 									>
 										Nenhum cliente encontrado.
@@ -163,6 +178,17 @@ export function Customers() {
 													: "Inativo"}
 											</span>
 										</td>
+										<td className="px-6 py-4 text-center">
+											<button
+												onClick={() =>
+													handleEditCustomer(customer)
+												}
+												className="p-2 text-dwl-blue/50 dark:text-dwl-grey hover:text-dwl-teal dark:hover:text-dwl-teal hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
+												title="Editar Cliente"
+											>
+												<Edit2 className="w-4 h-4" />
+											</button>
+										</td>
 									</tr>
 								))
 							)}
@@ -171,10 +197,11 @@ export function Customers() {
 				</div>
 			</div>
 
-			<NewCustomerDrawer
+			<CustomerDrawer
 				isOpen={isDrawerOpen}
 				onClose={() => setIsDrawerOpen(false)}
 				onSuccess={loadCustomers}
+				customerToEdit={customerToEdit}
 			/>
 		</div>
 	);
