@@ -31,6 +31,9 @@ export interface CreateCustomerPayload {
     neighborhood?: string | null;
 }
 
+// 3. Tipagem para a atualização (torna os campos de criação opcionais)
+export type UpdateCustomerPayload = Partial<CreateCustomerPayload>;
+
 export const customerService = {
 
     getCustomers: async (): Promise<Customer[]> => {
@@ -41,6 +44,12 @@ export const customerService = {
 
     createCustomer: async (customerData: CreateCustomerPayload): Promise<Customer> => {
         const response = await api.post('/customer', customerData);
+        return response.data.data;
+    },
+
+    // 🟢 Nova função de atualização conectada à rota PUT /:id
+    updateCustomer: async (id: string, customerData: UpdateCustomerPayload): Promise<Customer> => {
+        const response = await api.put(`/customer/${id}`, customerData);
         return response.data.data;
     },
 
