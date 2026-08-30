@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { X, Monitor, Hash, Cpu, Building2, Activity } from "lucide-react";
+import { X, Monitor, Hash, Cpu, Building2 } from "lucide-react";
 import {
 	equipmentService,
 	type Equipment,
