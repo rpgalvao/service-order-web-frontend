@@ -1,17 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Monitor, Cpu, Building2 } from "lucide-react";
+import { Plus, Search, Monitor, Cpu, Building2, Edit2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { equipmentService, type Equipment } from "../services/equipmentService";
 import { useAuth } from "../contexts/AuthContext";
-import { NewEquipmentModelDrawer } from "../components/ui/NewEquipmentModelDrawer";
-import { NewEquipmentDrawer } from "../components/ui/NewEquipmentDrawer";
+import { EquipmentDrawer } from "../components/ui/EquipmentDrawer";
 
 export function Equipments() {
 	const [equipments, setEquipments] = useState<Equipment[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
-
+	const [equipmentToEdit, setEquipmentToEdit] = useState<Equipment | null>(
+		null,
+	);
+	const navigate = useNavigate();
 	// Estados para as duas gavetas
-	const [isModelDrawerOpen, setIsModelDrawerOpen] = useState(false);
 	const [isEquipmentDrawerOpen, setIsEquipmentDrawerOpen] = useState(false);
 
 	const { user } = useAuth();
@@ -64,17 +66,20 @@ export function Equipments() {
 					{/* Botão de Novo Modelo: Restrito a Administradores */}
 					{isAdmin && (
 						<button
-							onClick={() => setIsModelDrawerOpen(true)}
+							onClick={() => navigate("/modelos")}
 							className="flex items-center gap-2 px-4 py-2 bg-app-lightSurface dark:bg-app-darkSurface border border-app-border hover:bg-black/5 dark:hover:bg-white/5 text-dwl-blue dark:text-dwl-light rounded-lg text-sm font-medium transition-colors w-full sm:w-auto justify-center"
 						>
 							<Cpu className="w-5 h-5" />
-							Novo Modelo
+							Catálogo de Modelos
 						</button>
 					)}
 
 					{/* Botão de Novo Equipamento: Aberto a todos */}
 					<button
-						onClick={() => setIsEquipmentDrawerOpen(true)}
+						onClick={() => {
+							setEquipmentToEdit(null);
+							setIsEquipmentDrawerOpen(true);
+						}}
 						className="flex items-center gap-2 px-4 py-2 bg-dwl-teal hover:bg-dwl-teal/90 text-white rounded-lg text-sm font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
 					>
 						<Plus className="w-5 h-5" />
@@ -113,6 +118,9 @@ export function Equipments() {
 								</th>
 								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light text-center">
 									Status Atual
+								</th>
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light text-center">
+									Ações
 								</th>
 							</tr>
 						</thead>
@@ -159,7 +167,7 @@ export function Equipments() {
 												</div>
 											) : (
 												<span className="text-sm text-dwl-blue/40 dark:text-dwl-grey italic">
-													Estoque Interno
+													Estoque DWL
 												</span>
 											)}
 										</td>
@@ -175,6 +183,20 @@ export function Equipments() {
 												{eq.status.replace("_", " ")}
 											</span>
 										</td>
+										<td className="px-6 py-4 text-center">
+											<button
+												onClick={() => {
+													setEquipmentToEdit(eq);
+													setIsEquipmentDrawerOpen(
+														true,
+													);
+												}}
+												className="p-2 text-dwl-blue/50 dark:text-dwl-grey hover:text-dwl-teal dark:hover:text-dwl-teal hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
+												title="Editar Equipamento"
+											>
+												<Edit2 className="w-4 h-4" />
+											</button>
+										</td>
 									</tr>
 								))
 							)}
@@ -184,16 +206,11 @@ export function Equipments() {
 			</div>
 
 			{/* Gavetas de Cadastro */}
-			<NewEquipmentModelDrawer
-				isOpen={isModelDrawerOpen}
-				onClose={() => setIsModelDrawerOpen(false)}
-				onSuccess={loadEquipments} // Recarrega se precisar
-			/>
-
-			<NewEquipmentDrawer
+			<EquipmentDrawer
 				isOpen={isEquipmentDrawerOpen}
 				onClose={() => setIsEquipmentDrawerOpen(false)}
 				onSuccess={loadEquipments}
+				equipmentToEdit={equipmentToEdit}
 			/>
 		</div>
 	);

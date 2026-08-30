@@ -7,6 +7,7 @@ import { Login } from "./pages/Login";
 import { Users } from "./pages/Users";
 import { Customers } from "./pages/Customers";
 import { Equipments } from "./pages/Equipments";
+import { EquipmentModels } from "./pages/EquipmentModels";
 import { OrderDetails } from "./pages/OrderDetails";
 import { Checklists } from "./pages/Checklists";
 import { Inventory } from "./pages/Inventory";
@@ -82,6 +83,16 @@ export default function App() {
 							<PrivateRoute>
 								<Layout>
 									<Customers />
+								</Layout>
+							</PrivateRoute>
+						}
+					/>
+					<Route
+						path="/modelos"
+						element={
+							<PrivateRoute>
+								<Layout>
+									<EquipmentModels />
 								</Layout>
 							</PrivateRoute>
 						}

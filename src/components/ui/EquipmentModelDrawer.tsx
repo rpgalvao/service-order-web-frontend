@@ -1,21 +1,34 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { X, Cpu } from "lucide-react";
-import { equipmentModelService } from "../../services/equipmentModelService";
+import {
+	equipmentModelService,
+	type EquipmentModel,
+} from "../../services/equipmentModelService";
 
-interface NewEquipmentModelDrawerProps {
+interface EquipmentModelDrawerProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSuccess: () => void;
+	modelToEdit?: EquipmentModel | null;
 }
 
-export function NewEquipmentModelDrawer({
+export function EquipmentModelDrawer({
 	isOpen,
 	onClose,
 	onSuccess,
-}: NewEquipmentModelDrawerProps) {
+	modelToEdit,
+}: EquipmentModelDrawerProps) {
 	const [name, setName] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
+
+	useEffect(() => {
+		if (modelToEdit) {
+			setName(modelToEdit.name);
+		} else {
+			setName("");
+		}
+	}, [modelToEdit, isOpen]);
 
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
@@ -23,15 +36,20 @@ export function NewEquipmentModelDrawer({
 		setIsLoading(true);
 
 		try {
-			await equipmentModelService.createModel({ name });
-			setName("");
+			if (modelToEdit) {
+				await equipmentModelService.updateModel(modelToEdit.id, {
+					name,
+				});
+			} else {
+				await equipmentModelService.createModel({ name });
+			}
 			onSuccess();
 			onClose();
 		} catch (err: any) {
 			console.error(err);
 			setError(
 				err.response?.data?.message ||
-					"Ocorreu um erro ao criar o modelo.",
+					"Ocorreu um erro ao salvar o modelo.",
 			);
 		} finally {
 			setIsLoading(false);
@@ -41,23 +59,16 @@ export function NewEquipmentModelDrawer({
 	return (
 		<>
 			<div
-				className={`fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm z-40 transition-opacity duration-300 ${
-					isOpen
-						? "opacity-100 pointer-events-auto"
-						: "opacity-0 pointer-events-none"
-				}`}
+				className={`fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm z-40 transition-opacity duration-300 ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
 				onClick={onClose}
 			/>
-
 			<div
-				className={`fixed top-0 right-0 h-full w-full max-w-sm bg-app-lightSurface dark:bg-app-darkSurface shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-app-border flex flex-col ${
-					isOpen ? "translate-x-0" : "translate-x-full"
-				}`}
+				className={`fixed top-0 right-0 h-full w-full max-w-sm bg-app-lightSurface dark:bg-app-darkSurface shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-app-border flex flex-col ${isOpen ? "translate-x-0" : "translate-x-full"}`}
 			>
 				<div className="flex items-center justify-between p-6 border-b border-app-border transition-colors duration-300">
 					<div>
 						<h2 className="text-lg font-bold text-dwl-blue dark:text-dwl-light">
-							Novo Modelo
+							{modelToEdit ? "Editar Modelo" : "Novo Modelo"}
 						</h2>
 						<p className="text-sm text-dwl-blue/70 dark:text-dwl-grey mt-1">
 							Catálogo base de equipamentos.
@@ -77,9 +88,8 @@ export function NewEquipmentModelDrawer({
 							{error}
 						</div>
 					)}
-
 					<form
-						id="new-model-form"
+						id="model-form"
 						onSubmit={handleSubmit}
 						className="space-y-6"
 					>
@@ -115,12 +125,14 @@ export function NewEquipmentModelDrawer({
 					</button>
 					<button
 						type="submit"
-						form="new-model-form"
+						form="model-form"
 						disabled={isLoading}
 						className="px-4 py-2 rounded-lg text-sm font-medium bg-dwl-teal text-white hover:bg-dwl-teal/90 transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center min-w-[120px]"
 					>
 						{isLoading ? (
 							<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+						) : modelToEdit ? (
+							"Salvar Alterações"
 						) : (
 							"Salvar Modelo"
 						)}

@@ -12,15 +12,23 @@ export interface CreateEquipmentModelPayload {
     name: string;
 }
 
+export type UpdateEquipmentModelPayload = Partial<CreateEquipmentModelPayload>;
+
 export const equipmentModelService = {
-    // Ajuste o prefixo da rota conforme você registrou no seu app.ts principal (ex: '/equipment-models' ou '/equipment-model')
-    getModels: async (): Promise<EquipmentModel[]> => {
-        const response = await api.get('/equipmentmodel');
+    getModels: async (includeInactive?: boolean): Promise<EquipmentModel[]> => {
+        const response = await api.get('/equipmentmodel', {
+            params: { includeInactive } // O Axios transforma isso em ?includeInactive=true
+        });
         return response.data.data;
     },
 
     createModel: async (data: CreateEquipmentModelPayload): Promise<EquipmentModel> => {
         const response = await api.post('/equipmentmodel', data);
+        return response.data.data;
+    },
+
+    updateModel: async (id: string, data: UpdateEquipmentModelPayload): Promise<EquipmentModel> => {
+        const response = await api.put(`/equipmentmodel/${id}`, data);
         return response.data.data;
     },
 
