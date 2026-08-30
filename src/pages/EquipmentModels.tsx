@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Cpu, Power, PowerOff } from "lucide-react";
+import { Plus, Search, Cpu, Power, PowerOff, Edit2 } from "lucide-react";
 import {
 	equipmentModelService,
 	type EquipmentModel,
 } from "../services/equipmentModelService";
-import { NewEquipmentModelDrawer } from "../components/ui/NewEquipmentModelDrawer";
+import { EquipmentModelDrawer } from "../components/ui/EquipmentModelDrawer";
 import { useAuth } from "../contexts/AuthContext";
 
 export function EquipmentModels() {
@@ -12,6 +12,8 @@ export function EquipmentModels() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+	const [modelToEdit, setModelToEdit] = useState<EquipmentModel | null>(null);
+	const [showInactive, setShowInactive] = useState(false);
 
 	// Pegamos o usuário para checar a permissão
 	const { user } = useAuth();
@@ -20,14 +22,14 @@ export function EquipmentModels() {
 	const loadModels = useCallback(async () => {
 		setIsLoading(true);
 		try {
-			const data = await equipmentModelService.getModels();
+			const data = await equipmentModelService.getModels(showInactive);
 			setModels(data);
 		} catch (error) {
 			console.error("Erro ao buscar a lista de modelos:", error);
 		} finally {
 			setIsLoading(false);
 		}
-	}, []);
+	}, [showInactive]);
 
 	useEffect(() => {
 		loadModels();
@@ -64,7 +66,10 @@ export function EquipmentModels() {
 				{/* Botão blindado: Apenas ADMIN */}
 				{isAdmin && (
 					<button
-						onClick={() => setIsDrawerOpen(true)}
+						onClick={() => {
+							setModelToEdit(null);
+							setIsDrawerOpen(true);
+						}}
 						className="flex items-center gap-2 px-4 py-2 bg-dwl-teal hover:bg-dwl-teal/90 text-white rounded-lg text-sm font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
 					>
 						<Plus className="w-5 h-5" />
@@ -74,8 +79,8 @@ export function EquipmentModels() {
 			</div>
 
 			<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm flex flex-col flex-1 overflow-hidden transition-colors duration-300">
-				<div className="p-4 border-b border-app-border">
-					<div className="relative max-w-md">
+				<div className="p-4 border-b border-app-border flex flex-col sm:flex-row gap-4 items-center justify-between">
+					<div className="relative w-full max-w-md">
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dwl-blue/40 dark:text-dwl-grey" />
 						<input
 							type="text"
@@ -85,6 +90,21 @@ export function EquipmentModels() {
 							className="w-full pl-10 pr-4 py-2 border border-app-border rounded-lg bg-black/5 dark:bg-white/5 text-dwl-blue dark:text-dwl-light focus:outline-none focus:ring-1 focus:ring-dwl-teal transition-all"
 						/>
 					</div>
+
+					{/* 🟢 Nossa nova Flag */}
+					{isAdmin && (
+						<label className="flex items-center gap-2 cursor-pointer text-sm text-dwl-blue/70 dark:text-dwl-grey hover:text-dwl-teal transition-colors">
+							<input
+								type="checkbox"
+								checked={showInactive}
+								onChange={(e) =>
+									setShowInactive(e.target.checked)
+								}
+								className="rounded border-app-border text-dwl-teal focus:ring-dwl-teal bg-transparent"
+							/>
+							Mostrar inativos
+						</label>
+					)}
 				</div>
 
 				<div className="flex-1 overflow-auto">
@@ -153,32 +173,47 @@ export function EquipmentModels() {
 													: "Inativo"}
 											</span>
 										</td>
-										<td className="px-6 py-4 text-right">
-											{/* Ação blindada: Apenas ADMIN pode desativar/reativar */}
+										<td className="px-6 py-4 text-right flex justify-end gap-2">
 											{isAdmin ? (
-												<button
-													onClick={() =>
-														handleToggleStatus(
-															model.id,
-														)
-													}
-													title={
-														model.active
-															? "Desativar Modelo"
-															: "Reativar Modelo"
-													}
-													className={`p-2 rounded-lg transition-colors ${
-														model.active
-															? "text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
-															: "text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10"
-													}`}
-												>
-													{model.active ? (
-														<PowerOff className="w-5 h-5" />
-													) : (
-														<Power className="w-5 h-5" />
-													)}
-												</button>
+												<>
+													<button
+														onClick={() => {
+															setModelToEdit(
+																model,
+															);
+															setIsDrawerOpen(
+																true,
+															);
+														}}
+														title="Editar Modelo"
+														className="p-2 rounded-lg transition-colors text-dwl-blue/50 dark:text-dwl-grey hover:text-dwl-teal dark:hover:text-dwl-teal hover:bg-black/5 dark:hover:bg-white/10"
+													>
+														<Edit2 className="w-4 h-4" />
+													</button>
+													<button
+														onClick={() =>
+															handleToggleStatus(
+																model.id,
+															)
+														}
+														title={
+															model.active
+																? "Desativar Modelo"
+																: "Reativar Modelo"
+														}
+														className={`p-2 rounded-lg transition-colors ${
+															model.active
+																? "text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+																: "text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10"
+														}`}
+													>
+														{model.active ? (
+															<PowerOff className="w-5 h-5" />
+														) : (
+															<Power className="w-5 h-5" />
+														)}
+													</button>
+												</>
 											) : (
 												<span className="text-xs text-dwl-blue/40 dark:text-dwl-grey">
 													Sem permissão
@@ -193,10 +228,11 @@ export function EquipmentModels() {
 				</div>
 			</div>
 
-			<NewEquipmentModelDrawer
+			<EquipmentModelDrawer
 				isOpen={isDrawerOpen}
 				onClose={() => setIsDrawerOpen(false)}
 				onSuccess={loadModels}
+				modelToEdit={modelToEdit}
 			/>
 		</div>
 	);
