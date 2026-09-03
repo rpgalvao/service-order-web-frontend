@@ -1,8 +1,9 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { X, ListChecks, Plus, Trash2 } from "lucide-react";
+import { X, ListChecks, Plus, Trash2, Edit2, Check } from "lucide-react";
 import {
 	checklistTemplateService,
 	type ChecklistTemplate,
+	type ChecklistQuestion,
 } from "../../services/checklistTemplateService";
 
 interface ManageQuestionsDrawerProps {
@@ -18,11 +19,16 @@ export function ManageQuestionsDrawer({
 }: ManageQuestionsDrawerProps) {
 	const [template, setTemplate] = useState<ChecklistTemplate | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
-
-	// Estado do formulário de nova pergunta
 	const [newQuestionText, setNewQuestionText] = useState("");
 	const [newQuestionOrder, setNewQuestionOrder] = useState(1);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	// Estados para edição inline
+	const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
+		null,
+	);
+	const [editOrder, setEditOrder] = useState(1);
+	const [editText, setEditText] = useState("");
 
 	const loadTemplate = async () => {
 		if (!templateId) return;
@@ -31,12 +37,10 @@ export function ManageQuestionsDrawer({
 			const data =
 				await checklistTemplateService.getTemplateById(templateId);
 			setTemplate(data);
-			// Sugere o próximo número de ordem automaticamente
 			if (data.questions && data.questions.length > 0) {
-				const maxOrder = Math.max(
-					...data.questions.map((q) => q.order),
+				setNewQuestionOrder(
+					Math.max(...data.questions.map((q) => q.order)) + 1,
 				);
-				setNewQuestionOrder(maxOrder + 1);
 			} else {
 				setNewQuestionOrder(1);
 			}
@@ -53,6 +57,7 @@ export function ManageQuestionsDrawer({
 		} else {
 			setTemplate(null);
 			setNewQuestionText("");
+			setEditingQuestionId(null);
 		}
 	}, [isOpen, templateId]);
 
@@ -66,11 +71,24 @@ export function ManageQuestionsDrawer({
 				order: newQuestionOrder,
 			});
 			setNewQuestionText("");
-			await loadTemplate(); // Recarrega a lista
-		} catch (err) {
-			alert("Erro ao adicionar pergunta.");
+			await loadTemplate();
+		} catch (err: any) {
+			alert(err.response?.data?.message || "Erro ao adicionar pergunta.");
 		} finally {
 			setIsSubmitting(false);
+		}
+	};
+
+	const handleUpdateQuestion = async (questionId: string) => {
+		try {
+			await checklistTemplateService.updateQuestion(questionId, {
+				text: editText,
+				order: editOrder,
+			});
+			setEditingQuestionId(null);
+			await loadTemplate();
+		} catch (err: any) {
+			alert(err.response?.data?.message || "Erro ao atualizar pergunta.");
 		}
 	};
 
@@ -89,6 +107,12 @@ export function ManageQuestionsDrawer({
 		}
 	};
 
+	const startEditing = (q: ChecklistQuestion) => {
+		setEditingQuestionId(q.id);
+		setEditOrder(q.order);
+		setEditText(q.text);
+	};
+
 	return (
 		<>
 			<div
@@ -96,12 +120,12 @@ export function ManageQuestionsDrawer({
 				onClick={onClose}
 			/>
 			<div
-				className={`fixed top-0 right-0 h-full w-full max-w-md bg-app-lightSurface dark:bg-app-darkSurface shadow-2xl z-50 transform transition-transform duration-300 flex flex-col ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+				className={`fixed top-0 right-0 h-full w-full max-w-lg bg-app-lightSurface dark:bg-app-darkSurface shadow-2xl z-50 transform transition-transform duration-300 flex flex-col ${isOpen ? "translate-x-0" : "translate-x-full"}`}
 			>
 				<div className="flex items-center justify-between p-6 border-b border-app-border">
 					<div>
 						<h2 className="text-lg font-bold text-dwl-blue dark:text-dwl-light flex items-center gap-2">
-							<ListChecks className="w-5 h-5 text-dwl-teal" />
+							<ListChecks className="w-5 h-5 text-dwl-teal" />{" "}
 							Gabarito: {template?.name || "Carregando..."}
 						</h2>
 					</div>
@@ -120,7 +144,6 @@ export function ManageQuestionsDrawer({
 						</div>
 					) : (
 						<>
-							{/* Formulário de Nova Pergunta */}
 							<form
 								onSubmit={handleAddQuestion}
 								className="bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-app-border mb-8"
@@ -175,19 +198,16 @@ export function ManageQuestionsDrawer({
 								</button>
 							</form>
 
-							{/* Lista de Perguntas */}
 							<h3 className="text-sm font-bold text-dwl-blue dark:text-dwl-light mb-3 border-b border-app-border pb-2">
 								Perguntas Cadastradas
 							</h3>
-
 							{!template?.questions ||
 							template.questions.length === 0 ? (
 								<p className="text-sm text-center py-6 text-dwl-blue/50 dark:text-dwl-grey">
-									Nenhuma pergunta cadastrada neste gabarito.
+									Nenhuma pergunta cadastrada.
 								</p>
 							) : (
 								<div className="space-y-3">
-									{/* Ordena as perguntas na exibição pela propriedade "order" */}
 									{[...template.questions]
 										.sort((a, b) => a.order - b.order)
 										.map((q) => (
@@ -195,23 +215,85 @@ export function ManageQuestionsDrawer({
 												key={q.id}
 												className="flex items-start gap-3 p-3 bg-app-lightSurface dark:bg-app-darkSurface border border-app-border rounded-lg group"
 											>
-												<span className="flex items-center justify-center w-6 h-6 rounded-full bg-dwl-teal/10 text-dwl-teal text-xs font-bold shrink-0">
-													{q.order}
-												</span>
-												<p className="text-sm text-dwl-blue dark:text-dwl-light flex-1 pt-0.5">
-													{q.text}
-												</p>
-												<button
-													onClick={() =>
-														handleDeleteQuestion(
-															q.id,
-														)
-													}
-													className="text-red-500/50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
-													title="Remover pergunta"
-												>
-													<Trash2 className="w-4 h-4" />
-												</button>
+												{editingQuestionId === q.id ? (
+													<div className="flex gap-2 w-full items-start">
+														<input
+															type="number"
+															value={editOrder}
+															onChange={(e) =>
+																setEditOrder(
+																	Number(
+																		e.target
+																			.value,
+																	),
+																)
+															}
+															className="w-16 px-2 py-1.5 border border-app-border rounded-lg bg-transparent text-sm focus:ring-1 focus:ring-dwl-teal"
+														/>
+														<input
+															type="text"
+															value={editText}
+															onChange={(e) =>
+																setEditText(
+																	e.target
+																		.value,
+																)
+															}
+															className="flex-1 px-2 py-1.5 border border-app-border rounded-lg bg-transparent text-sm focus:ring-1 focus:ring-dwl-teal"
+														/>
+														<button
+															onClick={() =>
+																handleUpdateQuestion(
+																	q.id,
+																)
+															}
+															className="p-1.5 text-green-500 hover:bg-green-500/10 rounded-lg"
+														>
+															<Check className="w-4 h-4" />
+														</button>
+														<button
+															onClick={() =>
+																setEditingQuestionId(
+																	null,
+																)
+															}
+															className="p-1.5 text-dwl-blue/50 hover:bg-black/5 rounded-lg"
+														>
+															<X className="w-4 h-4" />
+														</button>
+													</div>
+												) : (
+													<>
+														<span className="flex items-center justify-center w-6 h-6 rounded-full bg-dwl-teal/10 text-dwl-teal text-xs font-bold shrink-0">
+															{q.order}
+														</span>
+														<p className="text-sm text-dwl-blue dark:text-dwl-light flex-1 pt-0.5">
+															{q.text}
+														</p>
+														<div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+															<button
+																onClick={() =>
+																	startEditing(
+																		q,
+																	)
+																}
+																className="text-dwl-blue/50 hover:text-dwl-teal p-1"
+															>
+																<Edit2 className="w-4 h-4" />
+															</button>
+															<button
+																onClick={() =>
+																	handleDeleteQuestion(
+																		q.id,
+																	)
+																}
+																className="text-red-500/50 hover:text-red-500 p-1"
+															>
+																<Trash2 className="w-4 h-4" />
+															</button>
+														</div>
+													</>
+												)}
 											</div>
 										))}
 								</div>

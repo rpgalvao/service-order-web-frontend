@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { FileSignature, Plus, Settings } from "lucide-react";
+import {
+	FileSignature,
+	Plus,
+	Settings,
+	Edit2,
+	Trash2,
+	CheckCircle,
+} from "lucide-react";
 import {
 	checklistTemplateService,
 	type ChecklistTemplate,
@@ -17,28 +24,41 @@ export function Checklists() {
 		null,
 	);
 
+	const [showInactive, setShowInactive] = useState(false);
+	const [templateToEdit, setTemplateToEdit] =
+		useState<ChecklistTemplate | null>(null);
+
 	const loadTemplates = useCallback(async () => {
 		setIsLoading(true);
 		try {
-			const data = await checklistTemplateService.getTemplates();
+			const data =
+				await checklistTemplateService.getTemplates(showInactive);
 			setTemplates(data);
 		} catch (error) {
 			console.error("Erro ao buscar checklists:", error);
 		} finally {
 			setIsLoading(false);
 		}
-	}, []);
+	}, [showInactive]);
 
 	useEffect(() => {
 		loadTemplates();
 	}, [loadTemplates]);
 
-	const handleToggleStatus = async (id: string) => {
+	const handleToggleStatus = async (template: ChecklistTemplate) => {
+		const action = template.active ? "desativar" : "reativar";
+		if (
+			!window.confirm(
+				`Deseja realmente ${action} o gabarito "${template.name}"?`,
+			)
+		)
+			return;
+
 		try {
-			await checklistTemplateService.toggleStatus(id);
+			await checklistTemplateService.toggleStatus(template.id);
 			loadTemplates();
-		} catch (err) {
-			alert("Erro ao alterar status.");
+		} catch (err: any) {
+			alert(err.response?.data?.message || "Erro ao alterar status.");
 		}
 	};
 
@@ -50,16 +70,29 @@ export function Checklists() {
 						Gabaritos de Checklist
 					</h1>
 					<p className="text-sm text-dwl-blue/70 dark:text-dwl-grey mt-1">
-						Gerencie os formulários de manutenção preventiva e
-						instalação.
+						Gerencie os formulários de manutenção.
 					</p>
 				</div>
-				<button
-					onClick={() => setIsModalOpen(true)}
-					className="flex items-center gap-2 px-4 py-2 bg-dwl-teal hover:bg-dwl-teal/90 text-white rounded-lg text-sm font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
-				>
-					<Plus className="w-5 h-5" /> Novo Gabarito
-				</button>
+				<div className="flex items-center gap-4">
+					<label className="flex items-center gap-2 cursor-pointer text-sm text-dwl-blue/70 dark:text-dwl-grey hover:text-dwl-teal transition-colors">
+						<input
+							type="checkbox"
+							checked={showInactive}
+							onChange={(e) => setShowInactive(e.target.checked)}
+							className="rounded border-app-border text-dwl-teal focus:ring-dwl-teal bg-transparent"
+						/>
+						Mostrar inativos
+					</label>
+					<button
+						onClick={() => {
+							setTemplateToEdit(null);
+							setIsModalOpen(true);
+						}}
+						className="flex items-center gap-2 px-4 py-2 bg-dwl-teal hover:bg-dwl-teal/90 text-white rounded-lg text-sm font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
+					>
+						<Plus className="w-5 h-5" /> Novo Gabarito
+					</button>
+				</div>
 			</div>
 
 			<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm flex-1 overflow-auto">
@@ -116,9 +149,6 @@ export function Checklists() {
 									</td>
 									<td className="px-6 py-4 text-center">
 										<button
-											onClick={() =>
-												handleToggleStatus(template.id)
-											}
 											className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${template.active ? "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20" : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"}`}
 										>
 											{template.active
@@ -126,18 +156,55 @@ export function Checklists() {
 												: "Inativo"}
 										</button>
 									</td>
-									<td className="px-6 py-4 text-right">
-										<button
-											onClick={() =>
-												setManagingTemplateId(
-													template.id,
-												)
-											}
-											className="p-2 text-dwl-blue/60 hover:text-dwl-teal dark:text-dwl-grey dark:hover:text-dwl-teal transition-colors rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
-											title="Gerenciar Perguntas"
-										>
-											<Settings className="w-5 h-5" />
-										</button>
+									<td className="px-6 py-4 text-right flex justify-end gap-2">
+										{template.active ? (
+											<>
+												<button
+													onClick={() => {
+														setTemplateToEdit(
+															template,
+														);
+														setIsModalOpen(true);
+													}}
+													className="p-2 text-dwl-blue/60 hover:text-dwl-teal dark:text-dwl-grey dark:hover:text-dwl-teal transition-colors rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+													title="Editar Gabarito"
+												>
+													<Edit2 className="w-5 h-5" />
+												</button>
+												<button
+													onClick={() =>
+														setManagingTemplateId(
+															template.id,
+														)
+													}
+													className="p-2 text-dwl-blue/60 hover:text-dwl-teal dark:text-dwl-grey dark:hover:text-dwl-teal transition-colors rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+													title="Gerenciar Perguntas"
+												>
+													<Settings className="w-5 h-5" />
+												</button>
+												<button
+													onClick={() =>
+														handleToggleStatus(
+															template,
+														)
+													}
+													className="p-2 text-red-500/70 hover:text-red-500 transition-colors rounded-lg hover:bg-red-500/10"
+													title="Desativar Gabarito"
+												>
+													<Trash2 className="w-5 h-5" />
+												</button>
+											</>
+										) : (
+											<button
+												onClick={() =>
+													handleToggleStatus(template)
+												}
+												className="p-2 text-green-500/70 hover:text-green-500 transition-colors rounded-lg hover:bg-green-500/10"
+												title="Reativar Gabarito"
+											>
+												<CheckCircle className="w-5 h-5" />
+											</button>
+										)}
 									</td>
 								</tr>
 							))
@@ -150,6 +217,7 @@ export function Checklists() {
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
 				onSuccess={loadTemplates}
+				templateToEdit={templateToEdit}
 			/>
 			<ManageQuestionsDrawer
 				templateId={managingTemplateId}

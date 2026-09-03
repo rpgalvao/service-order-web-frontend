@@ -1,22 +1,27 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { FileSignature, X } from "lucide-react";
-import { checklistTemplateService } from "../../services/checklistTemplateService";
+import {
+	checklistTemplateService,
+	type ChecklistTemplate,
+} from "../../services/checklistTemplateService";
 import {
 	equipmentModelService,
 	type EquipmentModel,
 } from "../../services/equipmentModelService";
 
-interface NewChecklistModalProps {
+interface ChecklistModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSuccess: () => void;
+	templateToEdit?: ChecklistTemplate | null;
 }
 
 export function NewChecklistModal({
 	isOpen,
 	onClose,
 	onSuccess,
-}: NewChecklistModalProps) {
+	templateToEdit,
+}: ChecklistModalProps) {
 	const [name, setName] = useState("");
 	const [modelId, setModelId] = useState("");
 	const [models, setModels] = useState<EquipmentModel[]>([]);
@@ -27,11 +32,15 @@ export function NewChecklistModal({
 			equipmentModelService
 				.getModels()
 				.then((data) => setModels(data.filter((m) => m.active)));
-		} else {
-			setName("");
-			setModelId("");
+			if (templateToEdit) {
+				setName(templateToEdit.name);
+				setModelId(templateToEdit.modelId);
+			} else {
+				setName("");
+				setModelId("");
+			}
 		}
-	}, [isOpen]);
+	}, [isOpen, templateToEdit]);
 
 	if (!isOpen) return null;
 
@@ -39,11 +48,24 @@ export function NewChecklistModal({
 		e.preventDefault();
 		setIsSubmitting(true);
 		try {
-			await checklistTemplateService.createTemplate({ name, modelId });
+			if (templateToEdit) {
+				await checklistTemplateService.updateTemplate(
+					templateToEdit.id,
+					{ name, modelId },
+				);
+			} else {
+				await checklistTemplateService.createTemplate({
+					name,
+					modelId,
+				});
+			}
 			onSuccess();
 			onClose();
-		} catch (err) {
-			alert("Erro ao criar o gabarito. Verifique os dados.");
+		} catch (err: any) {
+			alert(
+				err.response?.data?.message ||
+					"Erro ao salvar o gabarito. Verifique os dados.",
+			);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -56,7 +78,9 @@ export function NewChecklistModal({
 					<div className="flex items-center gap-2 text-dwl-teal">
 						<FileSignature className="w-5 h-5" />
 						<h3 className="font-bold text-dwl-blue dark:text-dwl-light">
-							Novo Checklist
+							{templateToEdit
+								? "Editar Checklist"
+								: "Novo Checklist"}
 						</h3>
 					</div>
 					<button
@@ -114,7 +138,11 @@ export function NewChecklistModal({
 							disabled={isSubmitting || !modelId}
 							className="px-4 py-2 rounded-lg text-sm font-medium bg-dwl-teal text-white hover:bg-dwl-teal/90 disabled:opacity-50"
 						>
-							{isSubmitting ? "Salvando..." : "Criar Checklist"}
+							{isSubmitting
+								? "Salvando..."
+								: templateToEdit
+									? "Salvar Alterações"
+									: "Criar Checklist"}
 						</button>
 					</div>
 				</form>

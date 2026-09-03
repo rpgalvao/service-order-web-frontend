@@ -20,10 +20,8 @@ export interface ChecklistTemplate {
 
 export const checklistTemplateService = {
 
-    // Lista todos os gabaritos (Assumindo que você tenha essa rota de listagem geral)
-    getTemplates: async (): Promise<ChecklistTemplate[]> => {
-        // Ajuste a rota para bater com o seu router. Provavelmente /checklist-templates
-        const response = await api.get('/checklist-templates');
+    getTemplates: async (includeInactive?: boolean): Promise<ChecklistTemplate[]> => {
+        const response = await api.get('/checklist-templates', { params: { includeInactive } });
         return response.data.data;
     },
 
@@ -51,5 +49,15 @@ export const checklistTemplateService = {
         // Verifique como ficou a string da rota de delete no seu checklistTemplate.routes.ts
         // Baseado no seu controller, enviaremos apenas o questionId
         await api.delete(`/checklist-templates/questions/${questionId}`);
+    },
+
+    updateTemplate: async (id: string, data: { name?: string; modelId?: string; }): Promise<ChecklistTemplate> => {
+        const response = await api.put(`/checklist-templates/${id}`, data);
+        return response.data.data;
+    },
+
+    updateQuestion: async (questionId: string, data: { text?: string; order?: number; }): Promise<ChecklistQuestion> => {
+        const response = await api.put(`/checklist-templates/questions/${questionId}`, data);
+        return response.data.data;
     }
 };
