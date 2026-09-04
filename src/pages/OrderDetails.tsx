@@ -31,6 +31,9 @@ export function OrderDetails() {
 	const [error, setError] = useState("");
 	const [activeTab, setActiveTab] = useState<TabType>("VISAO_GERAL");
 
+	const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
+	const [reopenReason, setReopenReason] = useState("");
+
 	// Estados para o preenchimento do Checklist
 	const [checklistNotes, setChecklistNotes] = useState("");
 	const [checklistAnswers, setChecklistAnswers] = useState<any[]>([]);
@@ -162,16 +165,16 @@ export function OrderDetails() {
 		}
 	};
 
-	const handleReopenOrder = async () => {
+	const handleReopenOrder = async (e: React.FormEvent) => {
+		e.preventDefault();
 		if (!id) return;
-		if (!window.confirm("Deseja realmente reabrir esta Ordem de Serviço?"))
-			return;
-
 		try {
-			await serviceOrderService.reopenOrder(id);
+			await serviceOrderService.reopenOrder(id, reopenReason);
+			setIsReopenModalOpen(false);
+			setReopenReason("");
 			loadOrderDetails();
-		} catch (err) {
-			alert("Erro ao reabrir a O.S.");
+		} catch (err: any) {
+			alert(err.response?.data?.message || "Erro ao reabrir a O.S.");
 		}
 	};
 
@@ -363,7 +366,7 @@ export function OrderDetails() {
 					{(order.status === "FINALIZADA" ||
 						order.status === "CANCELADA") && (
 						<button
-							onClick={handleReopenOrder}
+							onClick={() => setIsReopenModalOpen(true)}
 							className="flex items-center gap-2 px-4 py-2 border border-app-border bg-black/5 dark:bg-white/5 text-dwl-blue dark:text-dwl-light rounded-lg text-sm font-medium hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
 						>
 							<RefreshCw className="w-4 h-4" />
@@ -432,6 +435,7 @@ export function OrderDetails() {
 									</div>
 								</div>
 
+								{/* 🟢 Histórico de Datas e Eventos Embutidos */}
 								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border">
 									<h3 className="text-xs font-bold text-dwl-teal mb-4 uppercase tracking-wider">
 										Histórico de Datas
@@ -485,6 +489,59 @@ export function OrderDetails() {
 												</p>
 											</>
 										)}
+
+										{/* 🟢 Linha do Tempo de Reaberturas */}
+										{order.events &&
+											order.events.length > 0 && (
+												<div className="mt-4 pt-4 border-t border-app-border">
+													<h4 className="text-[10px] font-bold text-dwl-blue/50 dark:text-dwl-grey uppercase mb-3">
+														Reaberturas Anteriores
+													</h4>
+													<div className="space-y-3">
+														{order.events.map(
+															(event) => (
+																<div
+																	key={
+																		event.id
+																	}
+																	className="bg-app-lightSurface dark:bg-app-darkSurface p-3 rounded-lg border border-app-border"
+																>
+																	<div className="flex justify-between items-start mb-1">
+																		<span className="font-bold text-xs text-dwl-teal">
+																			{
+																				event.action
+																			}
+																		</span>
+																		<span className="text-[10px] opacity-70">
+																			{new Date(
+																				event.created_at,
+																			).toLocaleString(
+																				"pt-BR",
+																			)}
+																		</span>
+																	</div>
+																	<p className="text-xs opacity-80 mb-2">
+																		Por:{" "}
+																		{event
+																			.user
+																			?.name ||
+																			"Sistema"}
+																	</p>
+																	{event.notes && (
+																		<p className="text-xs text-dwl-blue/80 dark:text-dwl-light/80 italic border-l-2 border-dwl-teal/30 pl-2">
+																			"
+																			{
+																				event.notes
+																			}
+																			"
+																		</p>
+																	)}
+																</div>
+															),
+														)}
+													</div>
+												</div>
+											)}
 									</div>
 								</div>
 							</div>
@@ -534,56 +591,6 @@ export function OrderDetails() {
 										</p>
 									</div>
 								)}
-
-							{order.events && order.events.length > 0 && (
-								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border mt-4">
-									<h3 className="text-xs font-bold text-dwl-teal mb-4 uppercase tracking-wider flex items-center gap-2">
-										<History className="w-4 h-4" />
-										Histórico de Eventos da O.S.
-									</h3>
-									<div className="space-y-4">
-										{order.events.map(
-											(event, index, arr) => (
-												<div
-													key={event.id}
-													className="flex gap-4 text-sm relative"
-												>
-													<div className="flex flex-col items-center">
-														<div className="w-2.5 h-2.5 rounded-full bg-dwl-teal mt-1" />
-														{index !==
-															arr.length - 1 && (
-															<div className="w-px h-full bg-dwl-teal/30 my-1" />
-														)}
-													</div>
-													<div className="pb-4 flex-1">
-														<p className="font-bold text-dwl-blue dark:text-dwl-light">
-															{event.action}{" "}
-															<span className="opacity-70 font-normal ml-1">
-																por{" "}
-																{event.user
-																	?.name ||
-																	"Sistema"}
-															</span>
-														</p>
-														<p className="text-xs opacity-70 mt-0.5">
-															{new Date(
-																event.created_at,
-															).toLocaleString(
-																"pt-BR",
-															)}
-														</p>
-														{event.notes && (
-															<p className="mt-2 text-dwl-blue/80 dark:text-dwl-light/80 bg-app-lightSurface dark:bg-app-darkSurface border border-app-border p-2.5 rounded-lg">
-																{event.notes}
-															</p>
-														)}
-													</div>
-												</div>
-											),
-										)}
-									</div>
-								</div>
-							)}
 
 							{order.client_signature && (
 								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border mt-4">
@@ -953,6 +960,84 @@ export function OrderDetails() {
 				defaultPhone={order.customer?.phone}
 				onConfirm={handleSendWhatsApp}
 			/>
+
+			{/* 🟢 Novo Modal de Reabertura */}
+			{isReopenModalOpen && (
+				<div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+					<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-2xl w-full max-w-md overflow-hidden">
+						<div className="flex items-center justify-between p-4 border-b border-app-border">
+							<div className="flex items-center gap-2 text-dwl-teal">
+								<RefreshCw className="w-5 h-5" />
+								<h3 className="font-bold text-dwl-blue dark:text-dwl-light">
+									Reabrir Ordem de Serviço
+								</h3>
+							</div>
+							<button
+								onClick={() => setIsReopenModalOpen(false)}
+								className="text-dwl-blue/50 dark:text-dwl-grey hover:text-dwl-blue dark:hover:text-dwl-light"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="20"
+									height="20"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								>
+									<path d="M18 6 6 18" />
+									<path d="m6 6 12 12" />
+								</svg>
+							</button>
+						</div>
+						<form
+							onSubmit={handleReopenOrder}
+							className="p-6 space-y-4"
+						>
+							<div className="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-500 p-3 rounded-lg text-sm mb-4">
+								<strong>Atenção:</strong> Reabrir a O.S.
+								removerá a data de encerramento atual. Esta ação
+								ficará registrada no histórico.
+							</div>
+							<div>
+								<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
+									Motivo da Reabertura{" "}
+									<span className="text-red-500">*</span>
+								</label>
+								<textarea
+									required
+									minLength={5}
+									rows={3}
+									value={reopenReason}
+									onChange={(e) =>
+										setReopenReason(e.target.value)
+									}
+									placeholder="Ex: Cliente relatou que o defeito persistiu após a entrega..."
+									className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent focus:ring-1 focus:ring-dwl-teal text-dwl-blue dark:text-dwl-light resize-none"
+								/>
+							</div>
+							<div className="flex justify-end gap-3 pt-4">
+								<button
+									type="button"
+									onClick={() => setIsReopenModalOpen(false)}
+									className="px-4 py-2 rounded-lg text-sm font-medium text-dwl-blue dark:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5"
+								>
+									Cancelar
+								</button>
+								<button
+									type="submit"
+									disabled={reopenReason.trim().length < 5}
+									className="px-4 py-2 rounded-lg text-sm font-medium bg-dwl-teal text-white hover:bg-dwl-teal/90 disabled:opacity-50"
+								>
+									Confirmar Reabertura
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

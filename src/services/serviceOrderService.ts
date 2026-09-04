@@ -83,8 +83,8 @@ export const serviceOrderService = {
         await api.patch(`/serviceorder/${id}/cancel`, { reason });
     },
 
-    reopenOrder: async (id: string): Promise<void> => {
-        await api.patch(`/serviceorder/${id}/reopen`);
+    reopenOrder: async (id: string, reason: string): Promise<void> => {
+        await api.patch(`/serviceorder/${id}/reopen`, { reason });
     },
 
     getOrderById: async (id: string): Promise<ServiceOrder> => {
