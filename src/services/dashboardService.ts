@@ -22,6 +22,7 @@ export interface DashboardMetrics {
     totalEquipments: number;
     chartData: ChartData[];
     recentActivities: RecentActivity[];
+    techMetrics: { name: string; osCount: number; avgResolutionTimeHours: number; }[];
 }
 
 export const dashboardService = {
