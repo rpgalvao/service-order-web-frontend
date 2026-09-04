@@ -1,5 +1,5 @@
 import { useState, useRef, type FormEvent } from "react";
-import { CheckCircle2, X, Eraser, PenLine } from "lucide-react";
+import { CheckCircle2, X, Eraser, PenLine, DollarSign } from "lucide-react";
 import SignatureCanvas from "react-signature-canvas";
 
 interface FinishOrderModalProps {
@@ -10,6 +10,7 @@ interface FinishOrderModalProps {
 		technicalNotes: string,
 		signature: string,
 		signerName: string,
+		costs: { labor: number; travel: number; accommodation: number },
 	) => Promise<void>;
 }
 
@@ -21,38 +22,32 @@ export function FinishOrderModal({
 	const [solution, setSolution] = useState("");
 	const [technicalNotes, setTechnicalNotes] = useState("");
 	const [signerName, setSignerName] = useState("");
-	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	// 🟢 Estados financeiros
+	const [laborCost, setLaborCost] = useState<number | "">("");
+	const [travelCost, setTravelCost] = useState<number | "">("");
+	const [accommodationCost, setAccommodationCost] = useState<number | "">("");
+
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const sigCanvas = useRef<SignatureCanvas>(null);
 
 	if (!isOpen) return null;
 
-	const handleClearSignature = () => {
-		sigCanvas.current?.clear();
-	};
+	const handleClearSignature = () => sigCanvas.current?.clear();
 
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
 
-		if (!solution.trim()) {
-			alert("A descrição da solução é obrigatória.");
-			return;
-		}
-
-		if (!signerName.trim()) {
-			alert("O nome do responsável é obrigatório.");
-			return;
-		}
-
-		if (sigCanvas.current?.isEmpty()) {
-			alert(
+		if (!solution.trim())
+			return alert("A descrição da solução é obrigatória.");
+		if (!signerName.trim())
+			return alert("O nome do responsável é obrigatório.");
+		if (sigCanvas.current?.isEmpty())
+			return alert(
 				"A assinatura do cliente é obrigatória para finalizar a O.S.",
 			);
-			return;
-		}
 
 		setIsSubmitting(true);
-
 		const signatureBase64 = sigCanvas.current
 			?.getCanvas()
 			.toDataURL("image/png");
@@ -63,21 +58,27 @@ export function FinishOrderModal({
 				technicalNotes,
 				signatureBase64,
 				signerName,
+				{
+					labor: Number(laborCost) || 0,
+					travel: Number(travelCost) || 0,
+					accommodation: Number(accommodationCost) || 0,
+				},
 			);
 		}
 
 		setIsSubmitting(false);
-
 		setSolution("");
 		setTechnicalNotes("");
 		setSignerName("");
+		setLaborCost("");
+		setTravelCost("");
+		setAccommodationCost("");
 		sigCanvas.current?.clear();
 	};
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
 			<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-				{/* Cabeçalho Fixo */}
 				<div className="flex items-center justify-between p-4 border-b border-app-border bg-green-50 dark:bg-green-500/10 shrink-0">
 					<div className="flex items-center gap-2 text-green-700 dark:text-green-400">
 						<CheckCircle2 className="w-5 h-5" />
@@ -94,13 +95,12 @@ export function FinishOrderModal({
 					</button>
 				</div>
 
-				{/* Corpo com Scroll */}
 				<form
 					id="finish-os-form"
 					onSubmit={handleSubmit}
 					className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6"
 				>
-					{/* 🟢 Área de Textos (Agora empilhadas e com 100% de largura) */}
+					{/* Textos */}
 					<div className="flex flex-col space-y-4">
 						<div className="flex flex-col">
 							<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-2">
@@ -109,10 +109,10 @@ export function FinishOrderModal({
 							</label>
 							<textarea
 								rows={3}
+								required
 								value={solution}
 								onChange={(e) => setSolution(e.target.value)}
 								placeholder="O que foi feito..."
-								required
 								className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-green-500 resize-none"
 							/>
 						</div>
@@ -136,18 +136,81 @@ export function FinishOrderModal({
 						</div>
 					</div>
 
-					{/* 🟢 Área de Assinatura */}
-					<div className="border border-app-border rounded-xl overflow-hidden bg-black/5 dark:bg-white/5 mt-2">
+					{/* 🟢 Painel Financeiro */}
+					<div className="bg-dwl-teal/5 border border-dwl-teal/20 rounded-xl p-4">
+						<div className="flex items-center gap-2 mb-4 text-dwl-teal">
+							<DollarSign className="w-4 h-4" />
+							<h4 className="text-sm font-bold uppercase tracking-wider">
+								Custos Adicionais
+							</h4>
+						</div>
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+							<div>
+								<label className="block text-xs font-medium text-dwl-blue/70 dark:text-dwl-grey mb-1.5">
+									Mão de Obra (R$)
+								</label>
+								<input
+									type="number"
+									step="0.01"
+									min="0"
+									value={laborCost}
+									onChange={(e) =>
+										setLaborCost(
+											Number(e.target.value) || "",
+										)
+									}
+									placeholder="0,00"
+									className="w-full px-3 py-2 border border-app-border rounded-lg bg-white dark:bg-app-darkSurface text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal"
+								/>
+							</div>
+							<div>
+								<label className="block text-xs font-medium text-dwl-blue/70 dark:text-dwl-grey mb-1.5">
+									Deslocamento (R$)
+								</label>
+								<input
+									type="number"
+									step="0.01"
+									min="0"
+									value={travelCost}
+									onChange={(e) =>
+										setTravelCost(
+											Number(e.target.value) || "",
+										)
+									}
+									placeholder="0,00"
+									className="w-full px-3 py-2 border border-app-border rounded-lg bg-white dark:bg-app-darkSurface text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal"
+								/>
+							</div>
+							<div>
+								<label className="block text-xs font-medium text-dwl-blue/70 dark:text-dwl-grey mb-1.5">
+									Hospedagem (R$)
+								</label>
+								<input
+									type="number"
+									step="0.01"
+									min="0"
+									value={accommodationCost}
+									onChange={(e) =>
+										setAccommodationCost(
+											Number(e.target.value) || "",
+										)
+									}
+									placeholder="0,00"
+									className="w-full px-3 py-2 border border-app-border rounded-lg bg-white dark:bg-app-darkSurface text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal"
+								/>
+							</div>
+						</div>
+					</div>
+
+					{/* Assinatura */}
+					<div className="border border-app-border rounded-xl overflow-hidden bg-black/5 dark:bg-white/5">
 						<div className="bg-dwl-teal/10 px-4 py-3 flex items-center gap-2 border-b border-app-border">
 							<PenLine className="w-4 h-4 text-dwl-teal" />
 							<span className="text-sm font-bold text-dwl-teal">
 								Assinatura do Responsável
 							</span>
 						</div>
-
-						{/* Adicionado um padding um pouco maior (p-5) para respirar */}
 						<div className="p-5">
-							{/* Espaçamento aumentado aqui (mb-6 ao invés de mb-4) */}
 							<div className="mb-6">
 								<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
 									Nome de quem está assinando{" "}
@@ -164,7 +227,6 @@ export function FinishOrderModal({
 									className="w-full px-3 py-2 border border-app-border rounded-lg bg-white dark:bg-app-darkSurface text-dwl-blue dark:text-dwl-light focus:ring-1 focus:ring-dwl-teal"
 								/>
 							</div>
-
 							<div className="border-2 border-dashed border-app-border rounded-lg overflow-hidden bg-white relative">
 								<SignatureCanvas
 									ref={sigCanvas}
@@ -191,7 +253,6 @@ export function FinishOrderModal({
 					</div>
 				</form>
 
-				{/* Rodapé Fixo */}
 				<div className="p-4 border-t border-app-border bg-black/5 dark:bg-white/5 shrink-0">
 					<div className="flex flex-col sm:flex-row justify-end gap-3">
 						<button

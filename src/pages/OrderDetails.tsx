@@ -148,6 +148,7 @@ export function OrderDetails() {
 		technicalNotes: string,
 		signatureBase64: string,
 		signerName: string,
+		costs: { labor: number; travel: number; accommodation: number },
 	) => {
 		if (!id) return;
 		try {
@@ -157,6 +158,9 @@ export function OrderDetails() {
 				technical_notes: technicalNotes,
 				client_signature: signatureBase64,
 				signer_name: signerName,
+				labor_cost: costs.labor,
+				travel_cost: costs.travel,
+				accommodation_cost: costs.accommodation,
 			});
 			setIsFinishModalOpen(false);
 			loadOrderDetails();

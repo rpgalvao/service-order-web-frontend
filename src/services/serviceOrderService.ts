@@ -98,6 +98,9 @@ export const serviceOrderService = {
         technical_notes?: string;
         client_signature?: string;
         signer_name?: string;
+        labor_cost?: number;
+        travel_cost?: number;
+        accommodation_cost?: number;
     }): Promise<ServiceOrder> => {
         const response = await api.put(`/serviceorder/${id}`, data);
         return response.data.data;
