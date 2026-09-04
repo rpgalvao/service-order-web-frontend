@@ -44,11 +44,14 @@ export interface ServiceOrder {
     signer_name?: string;
 
     // Relacionamentos que o Prisma geralmente traz com o "include"
-    customer?: { name: string; phone?: string | null; };
+    customer?: { name: string; phone?: string | null; email: string | null; };
     equipment?: { serial_number: string; model?: { name: string; }; };
     openedBy?: { name: string; };
     closedBy?: { name: string; };
     checklist?: ServiceOrderChecklist | null;
+
+    // Eventos de reabertura de O.S.
+    events?: { id: string; action: string; notes?: string | null; created_at: string; user?: { name: string; }; }[];
 
     // Peças substituídas na execução do serviço
     parts_replaced?: {
@@ -122,4 +125,9 @@ export const serviceOrderService = {
         const response = await api.patch(`/serviceorder/${id}/signature`, { signatureBase64 });
         return response.data;
     },
+
+    sendEmail: async (id: string, customEmail?: string): Promise<{ message: string; sent_to: string; }> => {
+        const response = await api.post(`/serviceorder/${id}/send-email`, { customEmail });
+        return response.data.data;
+    }
 };

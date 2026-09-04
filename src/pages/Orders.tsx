@@ -7,6 +7,11 @@ import {
 	Settings,
 	ShieldCheck,
 	AlertCircle,
+	MoreHorizontal,
+	Eye,
+	Mail,
+	X,
+	Send,
 } from "lucide-react";
 import {
 	serviceOrderService,
@@ -21,6 +26,12 @@ export function Orders() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+	// Estados do Menu Dropdown e Modal de E-mail
+	const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+	const [emailModalOs, setEmailModalOs] = useState<ServiceOrder | null>(null);
+	const [customEmail, setCustomEmail] = useState("");
+	const [isSendingEmail, setIsSendingEmail] = useState(false);
 
 	const loadOrders = useCallback(async () => {
 		setIsLoading(true);
@@ -38,7 +49,6 @@ export function Orders() {
 		loadOrders();
 	}, [loadOrders]);
 
-	// Filtro inteligente com trava de segurança (toString)
 	const filteredOrders = orders.filter((os) => {
 		const term = searchTerm.toLowerCase();
 		const osNumber = os.number ? os.number.toString() : "";
@@ -52,7 +62,34 @@ export function Orders() {
 		);
 	});
 
-	// Função auxiliar para renderizar o ícone e a cor do tipo de serviço
+	const handleSendEmail = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!emailModalOs) return;
+		setIsSendingEmail(true);
+
+		try {
+			const response = await serviceOrderService.sendEmail(
+				emailModalOs.id,
+				customEmail,
+			);
+			alert(response.message || "E-mail enviado com sucesso!");
+			setEmailModalOs(null);
+			setCustomEmail("");
+		} catch (error: any) {
+			console.error("Erro ao enviar e-mail:", error);
+			alert(error.response?.data?.message || "Erro ao enviar o e-mail.");
+		} finally {
+			setIsSendingEmail(false);
+		}
+	};
+
+	const openEmailModal = (os: ServiceOrder, e: React.MouseEvent) => {
+		e.stopPropagation();
+		setEmailModalOs(os);
+		setCustomEmail(os.customer?.email || "");
+		setOpenMenuId(null);
+	};
+
 	const renderTypeIcon = (type: string) => {
 		switch (type) {
 			case "CORRETIVA":
@@ -78,7 +115,6 @@ export function Orders() {
 		}
 	};
 
-	// Função auxiliar para renderizar o badge de status
 	const renderStatusBadge = (status: string) => {
 		switch (status) {
 			case "ABERTA":
@@ -119,18 +155,15 @@ export function Orders() {
 						Acompanhe e gerencie as manutenções da oficina.
 					</p>
 				</div>
-
 				<button
 					onClick={() => setIsDrawerOpen(true)}
 					className="flex items-center gap-2 px-4 py-2 bg-dwl-teal hover:bg-dwl-teal/90 text-white rounded-lg text-sm font-medium transition-colors shadow-sm w-full sm:w-auto justify-center"
 				>
-					<Plus className="w-5 h-5" />
-					Nova O.S.
+					<Plus className="w-5 h-5" /> Nova O.S.
 				</button>
 			</div>
 
-			<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm flex flex-col flex-1 overflow-hidden transition-colors duration-300">
-				{/* Barra de Pesquisa */}
+			<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm flex flex-col flex-1 overflow-visible transition-colors duration-300">
 				<div className="p-4 border-b border-app-border">
 					<div className="relative max-w-md">
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dwl-blue/40 dark:text-dwl-grey" />
@@ -144,7 +177,6 @@ export function Orders() {
 					</div>
 				</div>
 
-				{/* Tabela de O.S. */}
 				<div className="flex-1 overflow-auto">
 					<table className="w-full text-left border-collapse min-w-[900px]">
 						<thead>
@@ -164,13 +196,16 @@ export function Orders() {
 								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light text-center">
 									Status
 								</th>
+								<th className="px-6 py-4 text-sm font-semibold text-dwl-blue dark:text-dwl-light text-center">
+									Ações
+								</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-app-border">
 							{isLoading ? (
 								<tr>
 									<td
-										colSpan={5}
+										colSpan={6}
 										className="px-6 py-12 text-center text-dwl-blue/50 dark:text-dwl-grey"
 									>
 										<div className="flex flex-col items-center justify-center">
@@ -184,7 +219,7 @@ export function Orders() {
 							) : filteredOrders.length === 0 ? (
 								<tr>
 									<td
-										colSpan={5}
+										colSpan={6}
 										className="px-6 py-12 text-center text-dwl-blue/50 dark:text-dwl-grey"
 									>
 										<div className="flex flex-col items-center justify-center gap-2">
@@ -203,7 +238,7 @@ export function Orders() {
 										onClick={() =>
 											navigate(`/ordens/${os.id}`)
 										}
-										className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors group cursor-pointer"
+										className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors group cursor-pointer relative"
 									>
 										<td className="px-6 py-4">
 											<div className="flex items-center gap-2">
@@ -228,9 +263,9 @@ export function Orders() {
 													{
 														os.equipment
 															?.serial_number
-													}
+													}{" "}
 													{os.equipment?.model?.name
-														? ` - ${os.equipment.model.name}`
+														? `- ${os.equipment.model.name}`
 														: ""}
 												</p>
 											</div>
@@ -257,10 +292,74 @@ export function Orders() {
 															minute: "2-digit",
 														},
 													)
-												: "Data indisponível"}
+												: "Indisponível"}
 										</td>
 										<td className="px-6 py-4 text-center">
 											{renderStatusBadge(os.status)}
+										</td>
+										<td
+											className="px-6 py-4 text-center"
+											onClick={(e) => e.stopPropagation()}
+										>
+											<div className="relative inline-block text-left">
+												<button
+													onClick={() =>
+														setOpenMenuId(
+															openMenuId === os.id
+																? null
+																: os.id,
+														)
+													}
+													className="p-2 text-dwl-blue/50 hover:text-dwl-teal dark:text-dwl-grey dark:hover:text-dwl-teal transition-colors rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
+												>
+													<MoreHorizontal className="w-5 h-5" />
+												</button>
+
+												{/* Menu Dropdown Inteligente */}
+												{openMenuId === os.id && (
+													<div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-app-darkSurface ring-1 ring-black ring-opacity-5 border border-app-border z-50 overflow-hidden">
+														<div
+															className="py-1"
+															role="menu"
+														>
+															<button
+																onClick={() =>
+																	navigate(
+																		`/ordens/${os.id}`,
+																	)
+																}
+																className="w-full text-left px-4 py-2 text-sm text-dwl-blue dark:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2"
+															>
+																<Eye className="w-4 h-4 text-dwl-teal" />{" "}
+																Ver Detalhes
+															</button>
+															<button
+																onClick={(e) =>
+																	openEmailModal(
+																		os,
+																		e,
+																	)
+																}
+																disabled={
+																	os.status !==
+																	"FINALIZADA"
+																}
+																className="w-full text-left px-4 py-2 text-sm text-dwl-blue dark:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+																title={
+																	os.status !==
+																	"FINALIZADA"
+																		? "Apenas O.S. finalizadas podem ser enviadas"
+																		: ""
+																}
+															>
+																<Mail className="w-4 h-4 text-dwl-teal" />{" "}
+																Enviar por
+																E-mail
+															</button>
+														</div>
+													</div>
+												)}
+											</div>
 										</td>
 									</tr>
 								))
@@ -270,12 +369,87 @@ export function Orders() {
 				</div>
 			</div>
 
-			{/* Gaveta com a inteligência de cascata */}
 			<NewServiceOrderDrawer
 				isOpen={isDrawerOpen}
 				onClose={() => setIsDrawerOpen(false)}
 				onSuccess={loadOrders}
 			/>
+
+			{/* Modal de Envio de E-mail */}
+			{emailModalOs && (
+				<div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+					<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-2xl w-full max-w-md overflow-hidden">
+						<div className="flex items-center justify-between p-4 border-b border-app-border">
+							<div className="flex items-center gap-2 text-dwl-teal">
+								<Mail className="w-5 h-5" />
+								<h3 className="font-bold text-dwl-blue dark:text-dwl-light">
+									Enviar O.S. #
+									{String(emailModalOs.number).padStart(
+										4,
+										"0",
+									)}
+								</h3>
+							</div>
+							<button
+								onClick={() => setEmailModalOs(null)}
+								className="text-dwl-blue/50 dark:text-dwl-grey hover:text-dwl-blue dark:hover:text-dwl-light"
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+						<form
+							onSubmit={handleSendEmail}
+							className="p-6 space-y-4"
+						>
+							<div>
+								<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5">
+									E-mail de Destino{" "}
+									<span className="text-red-500">*</span>
+								</label>
+								<input
+									required
+									type="email"
+									value={customEmail}
+									onChange={(e) =>
+										setCustomEmail(e.target.value)
+									}
+									placeholder="cliente@email.com"
+									className="w-full px-3 py-2 border border-app-border rounded-lg bg-transparent focus:ring-1 focus:ring-dwl-teal text-dwl-blue dark:text-dwl-light"
+								/>
+								<p className="text-xs text-dwl-blue/60 dark:text-dwl-grey mt-2">
+									O e-mail padrão do cadastro já foi
+									carregado, mas você pode alterá-lo caso o
+									cliente solicite o envio para outro
+									endereço.
+								</p>
+							</div>
+							<div className="flex justify-end gap-3 pt-4">
+								<button
+									type="button"
+									onClick={() => setEmailModalOs(null)}
+									className="px-4 py-2 rounded-lg text-sm font-medium text-dwl-blue dark:text-dwl-light hover:bg-black/5 dark:hover:bg-white/5"
+								>
+									Cancelar
+								</button>
+								<button
+									type="submit"
+									disabled={isSendingEmail || !customEmail}
+									className="px-4 py-2 rounded-lg text-sm font-medium bg-dwl-teal text-white hover:bg-dwl-teal/90 disabled:opacity-50 flex items-center gap-2"
+								>
+									{isSendingEmail ? (
+										<div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+									) : (
+										<>
+											<Send className="w-4 h-4" /> Enviar
+											PDF
+										</>
+									)}
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

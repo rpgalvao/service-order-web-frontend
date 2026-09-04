@@ -9,6 +9,7 @@ import {
 	RefreshCw,
 	Printer,
 	MessageCircle,
+	History,
 } from "lucide-react";
 import {
 	serviceOrderService,
@@ -58,9 +59,6 @@ export function OrderDetails() {
 
 			if (data.checklist) {
 				setChecklistNotes(data.checklist.notes || "");
-
-				// A SUA IDEIA AQUI: Verificamos se a O.S. já foi finalizada antes.
-				// Se sim, as perguntas já foram avaliadas (true). Se for nova, iniciam como não avaliadas (false).
 				const isCompleted = !!data.checklist.completed_at;
 
 				const mappedAnswers = (data.checklist.answers || []).map(
@@ -89,11 +87,9 @@ export function OrderDetails() {
 		setIsExportingPdf(true);
 
 		try {
-			// Chama a função que criamos no serviço
 			const pdfUrl = await serviceOrderService.exportPdf(id);
 
 			if (pdfUrl) {
-				// Abre o PDF em uma nova aba do navegador
 				window.open(pdfUrl, "_blank");
 			} else {
 				alert("Não foi possível obter o link do documento.");
@@ -112,24 +108,18 @@ export function OrderDetails() {
 	const handleSendWhatsApp = async (customPhone: string) => {
 		if (!order || !id) return;
 
-		// Limpa o telefone digitado e adiciona o DDI do Brasil (55)
 		const cleanPhone = customPhone.replace(/\D/g, "");
 		const whatsappNumber =
 			cleanPhone.length >= 10 ? `55${cleanPhone}` : cleanPhone;
 
-		setIsExportingPdf(true); // Usa o estado do PDF para o visual de "carregando"
+		setIsExportingPdf(true);
 
 		try {
-			// 1. Gera o PDF e pega a URL
 			const pdfUrl = await serviceOrderService.exportPdf(id);
-
-			// 2. Monta a mensagem (sempre profissional)
 			const message = `Olá, ${order.customer?.name}!\n\nAqui é da *DWL Diagnóstica*.\nA Ordem de Serviço *#${String(order.number).padStart(4, "0")}* referente ao equipamento *${order.equipment?.model?.name || "N/A"}* encontra-se com o status: *${order.status}*.\n\nVocê pode baixar o relatório técnico completo acessando o link abaixo:\n🔗 ${pdfUrl}\n\nQualquer dúvida, estamos à disposição!`;
-
 			const encodedMessage = encodeURIComponent(message);
 			const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
 
-			// 3. Abre em uma nova aba
 			window.open(whatsappUrl, "_blank");
 		} catch (err: any) {
 			console.error(err);
@@ -139,14 +129,12 @@ export function OrderDetails() {
 		}
 	};
 
-	// --- Funções do Ciclo de Vida da O.S. ---
-
 	const handleCancelOrder = async (reason: string) => {
 		if (!id) return;
 		try {
 			await serviceOrderService.cancelOrder(id, reason);
 			setIsCancelModalOpen(false);
-			loadOrderDetails(); // Recarrega para atualizar o status e a tela
+			loadOrderDetails();
 		} catch (err) {
 			alert("Erro ao cancelar a O.S.");
 		}
@@ -176,7 +164,8 @@ export function OrderDetails() {
 
 	const handleReopenOrder = async () => {
 		if (!id) return;
-		if (!confirm("Deseja realmente reabrir esta Ordem de Serviço?")) return;
+		if (!window.confirm("Deseja realmente reabrir esta Ordem de Serviço?"))
+			return;
 
 		try {
 			await serviceOrderService.reopenOrder(id);
@@ -189,7 +178,6 @@ export function OrderDetails() {
 	const handleSaveChecklist = async () => {
 		if (!id || !order?.checklist) return;
 
-		// 🛡️ TRAVA BASEADA NA SUA LÓGICA: Verifica se TODAS as respostas possuem is_evaluated === true
 		const allEvaluated = checklistAnswers.every((ans) => ans.is_evaluated);
 
 		if (!allEvaluated) {
@@ -236,7 +224,6 @@ export function OrderDetails() {
 					return {
 						...ans,
 						[field]: value,
-						// Se o clique foi no botão (is_ok), ativamos a avaliação daquele item
 						is_evaluated:
 							field === "is_ok" ? true : ans.is_evaluated,
 					};
@@ -246,9 +233,6 @@ export function OrderDetails() {
 		);
 	};
 
-	// ----------------------------------------
-
-	// Carrega as peças ativas apenas quando a aba de Peças for acessada
 	useEffect(() => {
 		if (activeTab === "PECAS" && availableParts.length === 0) {
 			partService
@@ -270,7 +254,7 @@ export function OrderDetails() {
 			alert("Peça adicionada e estoque atualizado com sucesso!");
 			setSelectedPartId("");
 			setSelectedQuantity(1);
-			await loadOrderDetails(); // Recarrega a O.S. para mostrar a peça na lista
+			await loadOrderDetails();
 		} catch (err: any) {
 			const msg =
 				err.response?.data?.message || "Erro ao adicionar peça.";
@@ -306,7 +290,6 @@ export function OrderDetails() {
 
 	return (
 		<div className="flex flex-col h-full animate-in fade-in duration-300">
-			{/* Cabeçalho */}
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
 				<div className="flex items-center gap-4">
 					<button
@@ -339,11 +322,9 @@ export function OrderDetails() {
 					</div>
 				</div>
 
-				{/* Botões Dinâmicos do Ciclo de Vida */}
 				<div className="flex gap-2">
-					{/* 🟢 Botão do WhatsApp (Pintado de verde) */}
 					<button
-						onClick={() => setIsWhatsAppModalOpen(true)} // 🟢 Agora ele abre o modal!
+						onClick={() => setIsWhatsAppModalOpen(true)}
 						disabled={isExportingPdf}
 						className="flex items-center gap-2 px-4 py-2 border border-green-500/50 text-green-600 dark:text-green-400 bg-green-50/50 dark:bg-green-500/10 rounded-lg text-sm font-medium hover:bg-green-100 dark:hover:bg-green-500/20 disabled:opacity-50 transition-colors shadow-sm"
 						title="Enviar por WhatsApp"
@@ -352,7 +333,6 @@ export function OrderDetails() {
 						WhatsApp
 					</button>
 
-					{/* 🟢 Botão de Gerar PDF (Sempre visível) */}
 					<button
 						onClick={handleExportPdf}
 						disabled={isExportingPdf}
@@ -394,7 +374,6 @@ export function OrderDetails() {
 			</div>
 
 			<div className="bg-app-lightSurface dark:bg-app-darkSurface rounded-xl border border-app-border shadow-sm flex flex-col flex-1 overflow-hidden transition-colors duration-300">
-				{/* Navegação */}
 				<div className="flex border-b border-app-border bg-black/5 dark:bg-white/5">
 					<button
 						onClick={() => setActiveTab("VISAO_GERAL")}
@@ -416,13 +395,10 @@ export function OrderDetails() {
 					</button>
 				</div>
 
-				{/* Conteúdo Aba */}
 				<div className="flex-1 overflow-auto p-6">
 					{activeTab === "VISAO_GERAL" && (
 						<div className="space-y-6 text-dwl-blue dark:text-dwl-light animate-in fade-in">
-							{/* Grid de Informações Básicas e Datas */}
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-								{/* Dados do Equipamento */}
 								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border">
 									<h3 className="text-xs font-bold text-dwl-teal mb-4 uppercase tracking-wider">
 										Dados do Equipamento
@@ -456,7 +432,6 @@ export function OrderDetails() {
 									</div>
 								</div>
 
-								{/* Histórico de Datas Enriquecido */}
 								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border">
 									<h3 className="text-xs font-bold text-dwl-teal mb-4 uppercase tracking-wider">
 										Histórico de Datas
@@ -481,8 +456,6 @@ export function OrderDetails() {
 													"Sistema"}
 											</span>
 										</p>
-
-										{/* Exibe o encerramento apenas se existir a data de fechamento */}
 										{order.closed_at && (
 											<>
 												<div className="border-t border-app-border my-2 pt-2"></div>
@@ -516,7 +489,6 @@ export function OrderDetails() {
 								</div>
 							</div>
 
-							{/* Relato Original */}
 							<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border">
 								<h3 className="text-xs font-bold text-dwl-teal mb-3 uppercase tracking-wider">
 									Relato do Problema
@@ -526,7 +498,6 @@ export function OrderDetails() {
 								</p>
 							</div>
 
-							{/* Motivo do Cancelamento (Caixa Vermelha) */}
 							{order.status === "CANCELADA" &&
 								order.cancellation_reason && (
 									<div className="p-4 bg-red-500/10 rounded-xl border border-red-500/20">
@@ -539,7 +510,6 @@ export function OrderDetails() {
 									</div>
 								)}
 
-							{/* Solução Aplicada (Caixa Verde) */}
 							{order.status === "FINALIZADA" &&
 								order.solution_description && (
 									<div className="p-4 bg-green-500/10 rounded-xl border border-green-500/20">
@@ -552,7 +522,6 @@ export function OrderDetails() {
 									</div>
 								)}
 
-							{/* 🟢 NOVO: Observações Técnicas (Caixa Amarela) */}
 							{order.status === "FINALIZADA" &&
 								order.technical_notes && (
 									<div className="p-4 bg-amber-500/10 rounded-xl border border-amber-500/20 mt-4">
@@ -566,7 +535,56 @@ export function OrderDetails() {
 									</div>
 								)}
 
-							{/* 🟢 NOVO: Exibição da Assinatura Coletada */}
+							{order.events && order.events.length > 0 && (
+								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border mt-4">
+									<h3 className="text-xs font-bold text-dwl-teal mb-4 uppercase tracking-wider flex items-center gap-2">
+										<History className="w-4 h-4" />
+										Histórico de Eventos da O.S.
+									</h3>
+									<div className="space-y-4">
+										{order.events.map(
+											(event, index, arr) => (
+												<div
+													key={event.id}
+													className="flex gap-4 text-sm relative"
+												>
+													<div className="flex flex-col items-center">
+														<div className="w-2.5 h-2.5 rounded-full bg-dwl-teal mt-1" />
+														{index !==
+															arr.length - 1 && (
+															<div className="w-px h-full bg-dwl-teal/30 my-1" />
+														)}
+													</div>
+													<div className="pb-4 flex-1">
+														<p className="font-bold text-dwl-blue dark:text-dwl-light">
+															{event.action}{" "}
+															<span className="opacity-70 font-normal ml-1">
+																por{" "}
+																{event.user
+																	?.name ||
+																	"Sistema"}
+															</span>
+														</p>
+														<p className="text-xs opacity-70 mt-0.5">
+															{new Date(
+																event.created_at,
+															).toLocaleString(
+																"pt-BR",
+															)}
+														</p>
+														{event.notes && (
+															<p className="mt-2 text-dwl-blue/80 dark:text-dwl-light/80 bg-app-lightSurface dark:bg-app-darkSurface border border-app-border p-2.5 rounded-lg">
+																{event.notes}
+															</p>
+														)}
+													</div>
+												</div>
+											),
+										)}
+									</div>
+								</div>
+							)}
+
 							{order.client_signature && (
 								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border mt-4">
 									<h3 className="text-xs font-bold text-dwl-teal mb-3 uppercase tracking-wider">
@@ -644,8 +662,6 @@ export function OrderDetails() {
 															}
 														</p>
 													</div>
-
-													{/* Botões de Ação (OK / Defeito) */}
 													<div className="flex gap-2 shrink-0">
 														<button
 															onClick={() =>
@@ -659,13 +675,7 @@ export function OrderDetails() {
 																order.status !==
 																"ABERTA"
 															}
-															className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
-																answer.is_evaluated &&
-																answer.is_ok ===
-																	true
-																	? "bg-green-600 text-white border-green-600"
-																	: "bg-transparent text-dwl-blue/50 dark:text-dwl-grey border-app-border hover:bg-black/5 disabled:opacity-50"
-															}`}
+															className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${answer.is_evaluated && answer.is_ok === true ? "bg-green-600 text-white border-green-600" : "bg-transparent text-dwl-blue/50 dark:text-dwl-grey border-app-border hover:bg-black/5 disabled:opacity-50"}`}
 														>
 															OK
 														</button>
@@ -681,20 +691,12 @@ export function OrderDetails() {
 																order.status !==
 																"ABERTA"
 															}
-															className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
-																answer.is_evaluated &&
-																answer.is_ok ===
-																	false
-																	? "bg-red-600 text-white border-red-600"
-																	: "bg-transparent text-dwl-blue/50 dark:text-dwl-grey border-app-border hover:bg-black/5 disabled:opacity-50"
-															}`}
+															className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${answer.is_evaluated && answer.is_ok === false ? "bg-red-600 text-white border-red-600" : "bg-transparent text-dwl-blue/50 dark:text-dwl-grey border-app-border hover:bg-black/5 disabled:opacity-50"}`}
 														>
 															Com Problema
 														</button>
 													</div>
 												</div>
-
-												{/* Campo de Observação Específica do Item */}
 												<div className="pl-9">
 													<input
 														type="text"
@@ -720,7 +722,6 @@ export function OrderDetails() {
 										))}
 									</div>
 
-									{/* Campo de Notas Gerais do Checklist */}
 									<div className="mt-8">
 										<label className="block text-sm font-bold text-dwl-teal uppercase tracking-wider mb-2">
 											Observações Gerais do Checklist
@@ -739,7 +740,6 @@ export function OrderDetails() {
 										/>
 									</div>
 
-									{/* Botão de Salvar (Apenas se a OS estiver aberta) */}
 									{order.status === "ABERTA" && (
 										<div className="flex justify-end pt-4">
 											<button
@@ -759,7 +759,6 @@ export function OrderDetails() {
 					)}
 					{activeTab === "PECAS" && (
 						<div className="space-y-6 text-dwl-blue dark:text-dwl-light animate-in fade-in max-w-4xl mx-auto">
-							{/* Formulário de Adição de Peças (Aparece apenas se O.S. estiver aberta) */}
 							{order.status === "ABERTA" && (
 								<div className="p-4 bg-app-lightSurface dark:bg-app-darkSurface border border-app-border rounded-xl shadow-sm mb-6">
 									<h3 className="text-sm font-bold text-dwl-teal mb-4 uppercase tracking-wider">
@@ -832,7 +831,6 @@ export function OrderDetails() {
 								</div>
 							)}
 
-							{/* Lista de Peças Já Utilizadas */}
 							<h3 className="font-bold text-lg mb-4">
 								Peças Aplicadas nesta O.S.
 							</h3>
@@ -905,7 +903,6 @@ export function OrderDetails() {
 											))
 										)}
 									</tbody>
-									{/* Rodapé com Total (Opcional, se houver peças) */}
 									{order.parts_replaced &&
 										order.parts_replaced.length > 0 && (
 											<tfoot className="bg-black/5 dark:bg-white/5 border-t border-app-border">
@@ -945,13 +942,11 @@ export function OrderDetails() {
 				onClose={() => setIsCancelModalOpen(false)}
 				onConfirm={handleCancelOrder}
 			/>
-
 			<FinishOrderModal
 				isOpen={isFinishModalOpen}
 				onClose={() => setIsFinishModalOpen(false)}
 				onConfirm={handleFinishOrder}
 			/>
-
 			<SendWhatsAppModal
 				isOpen={isWhatsAppModalOpen}
 				onClose={() => setIsWhatsAppModalOpen(false)}
