@@ -39,7 +39,12 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 			adminOnly: true,
 		},
 		{ label: "Estoque", path: "/estoque", icon: Package, adminOnly: true },
-		{ label: "Usuários", path: "/usuarios", icon: UserCog },
+		{
+			label: "Usuários",
+			path: "/usuarios",
+			icon: UserCog,
+			adminOnly: true,
+		},
 		{ label: "Configurações", path: "/configuracoes", icon: Settings },
 	];
 

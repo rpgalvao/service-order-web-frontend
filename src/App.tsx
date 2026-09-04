@@ -15,12 +15,9 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Settings } from "./pages/Settings";
 import { ResetPassword } from "./pages/ResetPassword";
 
-// Componente que atua como "Leão de Chácara" das rotas
 function PrivateRoute({ children }: { children: ReactNode }) {
-	// 1. Puxamos o isLoading do contexto
 	const { isAuthenticated, isLoading } = useAuth();
 
-	// 2. Se estiver carregando, mostramos uma tela de espera bonita
 	if (isLoading) {
 		return (
 			<div className="flex h-screen w-full items-center justify-center bg-app-lightBg dark:bg-app-darkBg">
@@ -32,8 +29,30 @@ function PrivateRoute({ children }: { children: ReactNode }) {
 		);
 	}
 
-	// 3. Só avalia o redirecionamento DEPOIS que o isLoading for falso
 	return isAuthenticated ? children : <Navigate to="/login" />;
+}
+
+function AdminRoute({ children }: { children: ReactNode }) {
+	const { isAuthenticated, isLoading, user } = useAuth();
+
+	if (isLoading) {
+		return (
+			<div className="flex h-screen w-full items-center justify-center bg-app-lightBg dark:bg-app-darkBg">
+				<div className="flex items-center gap-3 text-dwl-blue dark:text-dwl-light">
+					<div className="w-6 h-6 border-2 border-dwl-teal border-t-transparent rounded-full animate-spin" />
+					<span className="font-medium">
+						Verificando permissões...
+					</span>
+				</div>
+			</div>
+		);
+	}
+
+	if (!isAuthenticated) return <Navigate to="/login" />;
+
+	if (user?.role !== "ADMIN") return <Navigate to="/" />;
+
+	return children;
 }
 
 export default function App() {
@@ -46,7 +65,7 @@ export default function App() {
 						path="/redefinir-senha"
 						element={<ResetPassword />}
 					/>
-
+					{/* Rotas Comuns (Técnicos e Admins) */}
 					<Route
 						path="/"
 						element={
@@ -68,11 +87,11 @@ export default function App() {
 						}
 					/>
 					<Route
-						path="/usuarios"
+						path="/ordens/:id"
 						element={
 							<PrivateRoute>
 								<Layout>
-									<Users />
+									<OrderDetails />
 								</Layout>
 							</PrivateRoute>
 						}
@@ -108,26 +127,6 @@ export default function App() {
 						}
 					/>
 					<Route
-						path="/ordens/:id"
-						element={
-							<PrivateRoute>
-								<Layout>
-									<OrderDetails />
-								</Layout>
-							</PrivateRoute>
-						}
-					/>
-					<Route
-						path="/checklists"
-						element={
-							<PrivateRoute>
-								<Layout>
-									<Checklists />
-								</Layout>
-							</PrivateRoute>
-						}
-					/>
-					<Route
 						path="/estoque"
 						element={
 							<PrivateRoute>
@@ -145,6 +144,28 @@ export default function App() {
 									<Settings />
 								</Layout>
 							</PrivateRoute>
+						}
+					/>{" "}
+					{/* 🟢 Rota liberada! */}
+					{/* Rotas Restritas (Somente Admins) */}
+					<Route
+						path="/checklists"
+						element={
+							<AdminRoute>
+								<Layout>
+									<Checklists />
+								</Layout>
+							</AdminRoute>
+						}
+					/>
+					<Route
+						path="/usuarios"
+						element={
+							<AdminRoute>
+								<Layout>
+									<Users />
+								</Layout>
+							</AdminRoute>
 						}
 					/>
 				</Routes>
