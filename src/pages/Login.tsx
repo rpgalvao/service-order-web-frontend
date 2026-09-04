@@ -28,8 +28,18 @@ export function Login() {
 			const response = await api.post("/login", { email, password });
 			login(response.data.data.token, response.data.data.user);
 			navigate("/");
-		} catch (err) {
-			setError("Credenciais inválidas. Tente novamente.");
+		} catch (err: any) {
+			// 🟢 NOVO: Tratamento inteligente de erros (Rate Limit vs Credenciais)
+			if (err.response?.status === 429) {
+				setError(
+					"Muitas tentativas de login. Por segurança, aguarde 15 minutos e tente novamente.",
+				);
+			} else {
+				setError(
+					err.response?.data?.message ||
+						"Credenciais inválidas. Tente novamente.",
+				);
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -42,9 +52,7 @@ export function Login() {
 		setIsLoading(true);
 
 		try {
-			// Chamada real para a sua rota de esqueci a senha
 			await api.post("/login/forgot-password", { email: recoveryEmail });
-
 			setRecoveryMessage(
 				"Se o e-mail estiver cadastrado, você receberá um link de recuperação em breve.",
 			);
