@@ -167,7 +167,7 @@ export function NewServiceOrderDrawer({
 							{/* Vínculos Principais */}
 							<div className="space-y-4">
 								<div>
-									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5 flex items-center gap-2">
+									<label className="text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5 flex items-center gap-2">
 										<Building2 className="w-4 h-4 text-dwl-teal" />
 										Cliente{" "}
 										<span className="text-red-500">*</span>
@@ -195,7 +195,7 @@ export function NewServiceOrderDrawer({
 								</div>
 
 								<div>
-									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5 flex items-center gap-2">
+									<label className="text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5 flex items-center gap-2">
 										<Monitor className="w-4 h-4 text-dwl-teal" />
 										Equipamento (S/N){" "}
 										<span className="text-red-500">*</span>
@@ -236,7 +236,7 @@ export function NewServiceOrderDrawer({
 							{/* Detalhes do Serviço */}
 							<div className="space-y-4 pt-4 border-t border-app-border">
 								<div>
-									<label className="block text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5 flex items-center gap-2">
+									<label className="text-sm font-medium text-dwl-blue dark:text-dwl-light mb-1.5 flex items-center gap-2">
 										<Wrench className="w-4 h-4 text-dwl-teal" />
 										Tipo de Serviço{" "}
 										<span className="text-red-500">*</span>
