@@ -9,6 +9,7 @@ import {
 	RefreshCw,
 	Printer,
 	MessageCircle,
+	QrCode,
 } from "lucide-react";
 import {
 	serviceOrderService,
@@ -51,6 +52,9 @@ export function OrderDetails() {
 
 	// Estados para geração do PDF
 	const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+	// Estados para geração do QRCode
+	const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
 
 	const loadOrderDetails = useCallback(async () => {
 		if (!id) return;
@@ -104,6 +108,21 @@ export function OrderDetails() {
 			alert(msg);
 		} finally {
 			setIsExportingPdf(false);
+		}
+	};
+
+	const handleGenerateLabel = async () => {
+		if (!order) return;
+		setIsGeneratingLabel(true);
+		try {
+			const response = await serviceOrderService.generateLabel(order.id);
+			// Abre a etiqueta gerada em uma nova aba para o usuário imprimir
+			window.open(response.labelUrl, "_blank");
+		} catch (error: any) {
+			console.error("Erro ao gerar etiqueta:", error);
+			alert(error.response?.data?.message || "Erro ao gerar a etiqueta.");
+		} finally {
+			setIsGeneratingLabel(false);
 		}
 	};
 
@@ -365,6 +384,24 @@ export function OrderDetails() {
 							</button>
 						</>
 					)}
+
+					{order?.status === "FINALIZADA" &&
+						order?.type === "PREVENTIVA" && (
+							<button
+								onClick={handleGenerateLabel}
+								disabled={isGeneratingLabel}
+								className="flex items-center gap-2 px-4 py-2 bg-dwl-teal/10 text-dwl-teal hover:bg-dwl-teal hover:text-white border border-dwl-teal rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+							>
+								{isGeneratingLabel ? (
+									<div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+								) : (
+									<>
+										<QrCode className="w-4 h-4" />
+										Imprimir Etiqueta
+									</>
+								)}
+							</button>
+						)}
 
 					{(order.status === "FINALIZADA" ||
 						order.status === "CANCELADA") && (
