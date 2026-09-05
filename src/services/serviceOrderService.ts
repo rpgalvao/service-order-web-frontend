@@ -132,5 +132,10 @@ export const serviceOrderService = {
     sendEmail: async (id: string, customEmail?: string): Promise<{ message: string; sent_to: string; }> => {
         const response = await api.post(`/serviceorder/${id}/send-email`, { customEmail });
         return response.data.data;
-    }
+    },
+
+    generateLabel: async (id: string): Promise<{ success: boolean; labelUrl: string; }> => {
+        const response = await api.get(`/serviceorder/${id}/label`);
+        return response.data;
+    },
 };
