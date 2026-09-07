@@ -10,6 +10,9 @@ import {
 	Printer,
 	MessageCircle,
 	QrCode,
+	Camera,
+	Trash2,
+	Loader2,
 } from "lucide-react";
 import {
 	serviceOrderService,
@@ -55,6 +58,40 @@ export function OrderDetails() {
 
 	// Estados para geração do QRCode
 	const [isGeneratingLabel, setIsGeneratingLabel] = useState(false);
+
+	const [isUploading, setIsUploading] = useState<string | null>(null);
+
+	const handleImageUpload = async (
+		event: React.ChangeEvent<HTMLInputElement>,
+		tag: "ANTES" | "DURANTE" | "DEPOIS",
+	) => {
+		const file = event.target.files?.[0];
+		if (!file || !order) return;
+
+		setIsUploading(tag);
+		try {
+			await serviceOrderService.uploadImage(order.id, tag, file);
+			loadOrderDetails();
+		} catch (error: any) {
+			console.error("Erro ao fazer upload da imagem:", error);
+			alert(error.response?.data?.message || "Erro ao salvar imagem.");
+		} finally {
+			setIsUploading(null);
+			event.target.value = "";
+		}
+	};
+
+	const handleRemoveImage = async (imageId: string) => {
+		if (!confirm("Tem certeza que deseja apagar esta evidência?")) return;
+
+		try {
+			await serviceOrderService.removeImage(imageId);
+			loadOrderDetails();
+		} catch (error: any) {
+			console.error("Erro ao remover imagem:", error);
+			alert(error.response?.data?.message || "Erro ao apagar imagem.");
+		}
+	};
 
 	const loadOrderDetails = useCallback(async () => {
 		if (!id) return;
@@ -631,6 +668,97 @@ export function OrderDetails() {
 										</p>
 									</div>
 								)}
+
+							{/* BLOCO DE EVIDÊNCIAS FOTOGRÁFICAS */}
+							<div className="mt-8 bg-white border border-gray-200 rounded-lg p-6">
+								<div className="flex items-center gap-2 mb-6">
+									<Camera className="w-5 h-5 text-dwl-teal" />
+									<h3 className="text-lg font-semibold text-gray-800">
+										Evidências Fotográficas
+									</h3>
+								</div>
+
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+									{(
+										["ANTES", "DURANTE", "DEPOIS"] as const
+									).map((tag) => (
+										<div
+											key={tag}
+											className="flex flex-col bg-gray-50 border border-gray-100 rounded-lg p-4"
+										>
+											<h4 className="text-sm font-bold text-gray-600 mb-4">
+												{tag} DA MANUTENÇÃO
+											</h4>
+
+											{/* Galeria de Fotos desta Categoria */}
+											<div className="flex flex-wrap gap-3 mb-4">
+												{order?.images
+													?.filter(
+														(img) =>
+															img.tag === tag,
+													)
+													.map((img) => (
+														<div
+															key={img.id}
+															className="relative group w-24 h-24 rounded-lg overflow-hidden border border-gray-200"
+														>
+															<img
+																src={img.url}
+																alt={`Evidência ${tag}`}
+																className="w-full h-full object-cover transition-transform group-hover:scale-105"
+															/>
+															<button
+																onClick={() =>
+																	handleRemoveImage(
+																		img.id,
+																	)
+																}
+																className="absolute top-1 right-1 bg-red-600 text-white p-1.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+																title="Apagar foto"
+															>
+																<Trash2 className="w-3.5 h-3.5" />
+															</button>
+														</div>
+													))}
+
+												{order?.images?.filter(
+													(img) => img.tag === tag,
+												).length === 0 && (
+													<span className="text-xs text-gray-400 italic">
+														Nenhuma foto anexada.
+													</span>
+												)}
+											</div>
+
+											{/* Botão de Upload Nativo escondido e Estilizado */}
+											<label className="mt-auto flex items-center justify-center gap-2 w-full py-2 bg-white border-2 border-dashed border-gray-300 rounded-lg text-sm font-medium text-gray-500 hover:text-dwl-teal hover:border-dwl-teal hover:bg-dwl-teal/5 cursor-pointer transition-colors">
+												{isUploading === tag ? (
+													<Loader2 className="w-4 h-4 animate-spin text-dwl-teal" />
+												) : (
+													<>
+														<Camera className="w-4 h-4" />
+														Adicionar Foto
+													</>
+												)}
+												<input
+													type="file"
+													accept="image/*"
+													className="hidden"
+													onChange={(e) =>
+														handleImageUpload(
+															e,
+															tag,
+														)
+													}
+													disabled={
+														isUploading === tag
+													}
+												/>
+											</label>
+										</div>
+									))}
+								</div>
+							</div>
 
 							{order.client_signature && (
 								<div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-app-border mt-4">

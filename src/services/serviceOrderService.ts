@@ -63,6 +63,15 @@ export interface ServiceOrder {
             sku?: string | null;
         };
     }[];
+
+    images?: ServiceOrderImage[];
+}
+
+export interface ServiceOrderImage {
+    id: string;
+    url: string;
+    tag: 'ANTES' | 'DURANTE' | 'DEPOIS';
+    created_at: string;
 }
 
 export const serviceOrderService = {
@@ -136,6 +145,24 @@ export const serviceOrderService = {
 
     generateLabel: async (id: string): Promise<{ success: boolean; labelUrl: string; }> => {
         const response = await api.get(`/serviceorder/${id}/label`);
+        return response.data;
+    },
+
+    uploadImage: async (osId: string, tag: 'ANTES' | 'DURANTE' | 'DEPOIS', file: File): Promise<any> => {
+        const formData = new FormData();
+        formData.append('tag', tag);
+        formData.append('file', file);
+
+        const response = await api.post(`/serviceorder/${osId}/images`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    },
+
+    removeImage: async (imageId: string): Promise<any> => {
+        const response = await api.delete(`/serviceorder/images/${imageId}`);
         return response.data;
     },
 };
